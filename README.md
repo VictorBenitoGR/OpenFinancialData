@@ -12,8 +12,9 @@ This project started as a personal initiative during my university career at Tec
 
 
 ## Current Development
+These processes will be systematized to analyze on a large scale the evolution of the financial information provided by public companies listed in the SEC (US, through the official [EDGAR package](https://www.sec.gov/edgar/sec-api-documentation) in R) and BMV/BIVA (Mexico, initially through the API of the [DataBursatil](https://databursatil.com/docs.html) project).
 
-### General forecast
+### 1. General forecast and financial ratios
 Obtain the net profit for Q4 of each year and apply different forecasting methods such as **Simple Average**, **Moving Average** (n = 3 and more), **Weighted Moving Avarage**, **Exponential Smoothing** (using different alphas), etc., calculating their respective **Median Absolute Deviation (MAD)** and highlighting the one with the highest accuracy.
 
 ![Herdez Forecast](./assets/HerdezAnalysis1.png "Herdez Forecast")
@@ -30,8 +31,27 @@ Calculate current and forecasted **Financial Ratios**, such as the **Activity** 
 
 ![Herdez Financial Ratios](./assets/HerdezAnalysis4.png "Herdez Financial Ratios")
 
+
 ### Investments and depreciations
 
+Clarify the elements necessary to analyze potential investments, such as Investment Capacity, Loan, Price Forecast (1st year), Annual Sales Forecast, Revenue Forecast (1st year), Annual Demand Growth, Working Capital (% of sales), current Treasury Bills (US) or CETES (Mexico) yield, Minimum Expected Return, Annual Interest Rate on Credit, Annual Inflation, Income Tax, sales history and fixed monthly expenses.
+
+![General Info](./assets/DepreciationAnalysis1.png "General Info")
+
+![Expected Scenario](./assets/DepreciationAnalysis2.png "Expected Scenario")
+
+![Pessimistic Scenario](./assets/DepreciationAnalysis3.png "Pessimistic Scenario")
+
+![Optimistic Scenario](./assets/DepreciationAnalysis4.png "Optimistic Scenario")
+
+![Depreciation Analysis](./assets/DepreciationAnalysis5.png "Depreciation Analysis")
+
+![Depreciation Comparison](./assets/DepreciationAnalysis6.png "Depreciation Comparison")
+
+![Sensitivity Analysis](./assets/DepreciationAnalysis7.png "Sensitivity Analysis")
+
+> [!NOTE]
+> Highlights information that users should take into account, even when skimming.
 
 ## Future work
 
