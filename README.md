@@ -15,7 +15,7 @@ This project started as a personal initiative during my university career at Tec
 These processes will be systematized to analyze on a large scale the evolution of the financial information provided by public companies listed in the SEC (US, through the official [EDGAR package](https://www.sec.gov/edgar/sec-api-documentation) in R) and BMV/BIVA (Mexico, initially through the API of the [DataBursatil](https://databursatil.com/docs.html) project).
 
 ### 1. General forecast and financial ratios
-Obtain the net profit for Q4 of each year and apply different forecasting methods such as **Simple Average**, **Moving Average** (n = 3 and more), **Weighted Moving Avarage**, **Exponential Smoothing** (using different alphas), etc., calculating their respective **Median Absolute Deviation (MAD)** and highlighting the one with the highest accuracy.
+Obtain the net profit for Q4 of each year and apply different forecasting methods such as **Simple Average**, **Moving Average** (n = 3 and more), **Weighted Moving Average**, **Exponential Smoothing** (using different alphas), etc., calculating their respective **Median Absolute Deviation (MAD)** and highlighting the one with the highest accuracy.
 
 ![Herdez Forecast](./assets/HerdezAnalysis1.png "Herdez Forecast")
 
