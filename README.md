@@ -32,26 +32,38 @@ Calculate current and forecasted **Financial Ratios**, such as the **Activity** 
 ![Herdez Financial Ratios](./assets/HerdezAnalysis4.png "Herdez Financial Ratios")
 
 
-### Investments and depreciations
+### Investments and depreciation
 
 Clarify the elements necessary to analyze potential investments, such as Investment Capacity, Loan, Price Forecast (1st year), Annual Sales Forecast, Revenue Forecast (1st year), Annual Demand Growth, Working Capital (% of sales), current Treasury Bills (US) or CETES (Mexico) yield, Minimum Expected Return, Annual Interest Rate on Credit, Annual Inflation, Income Tax, sales history and fixed monthly expenses.
 
 ![General Info](./assets/DepreciationAnalysis1.png "General Info")
 
-![Expected Scenario](./assets/DepreciationAnalysis2.png "Expected Scenario")
+Generate the different depreciation alternatives such as Straight-Line (**SLN**), Double Declining Balance (**DDB**), Sum of Years (**SYD**) or Modified Accelerated Cost Recovery System (**MACRS**), based on the cost of the asset including installation (**I**), the salvage value at the end of the useful life (**S**), the useful life in years (**N**), and the multiplier in the case of accelerated methods (which is usually **2 or 1.5**).
 
-![Pessimistic Scenario](./assets/DepreciationAnalysis3.png "Pessimistic Scenario")
+![Depreciation Comparison](./assets/DepreciationAnalysis2.png "Depreciation Comparison")
 
-![Optimistic Scenario](./assets/DepreciationAnalysis4.png "Optimistic Scenario")
+Based on this we unify the depreciated value according to each method, to compare them by year and by specific periods according to useful life.
 
-![Depreciation Analysis](./assets/DepreciationAnalysis5.png "Depreciation Analysis")
+![Depreciation Analysis](./assets/DepreciationAnalysis3.png "Depreciation Analysis")
 
-![Depreciation Comparison](./assets/DepreciationAnalysis6.png "Depreciation Comparison")
+Considering the initial data and its evolution with inflation, demand growth, interest rate and the best depreciation method obtained before, We calculate the cash flow forecast with the investment and its impact on the **Net Present Value (NPV)**, **Internal Rate of Return (IRR)** and **Profitability Index (PI)** for the **expected scenario**.
+
+![Expected Scenario](./assets/DepreciationAnalysis4.png "Expected Scenario")
+
+Customization of the **pessimistic scenario**, such as removing the increase in demand (stagnation) or higher inflation.
+
+![Pessimistic Scenario](./assets/DepreciationAnalysis5.png "Pessimistic Scenario")
+
+Customization of the **optimistic scenario**, such as a further increase in demand.
+
+![Optimistic Scenario](./assets/DepreciationAnalysis6.png "Optimistic Scenario")
+
+Based on the NPV, IIR, and PI obtained for the pessimistic, expected and optimistic scenarios, we calculate a **sensitivity analysis**.
 
 ![Sensitivity Analysis](./assets/DepreciationAnalysis7.png "Sensitivity Analysis")
 
 > [!NOTE]
-> Highlights information that users should take into account, even when skimming.
+> Finally, a structure will be added to systematize the measurement of the Degree of Operating (DOL), Financial (DFL) and Total (DTL) Leverage.
 
 ## Future work
 
