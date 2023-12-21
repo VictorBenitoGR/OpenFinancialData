@@ -5,16 +5,17 @@
 
 The intelligent collection, cleaning, processing and visualization of data is an indispensable process for the efficient, precise, productive and sharp **self-criticism** of any project. 
 
-This project seeks to facilitate the **accounting records** and **financial analysis** of companies, which includes the generation of **financial statements and their forecasts** based on different models, such as simple average, moving average, exponential smoothing, and so on. A mechanism will be developed to **analyze and visualize the evolution of companies** listed on the Securities and Exchange Commission (SEC) and Mexican Stock Exchange (BMV) using their public financial statements with a conversion from XBRL format to an R dataframe.
+This project seeks to automate **accounting records**, **financial forecasting** and **investment-depreciation** analysis, allowing to visualize the evolution of public companies listed on the **SEC** (US, through the official EDGAR package) and **BMV/BIVA** (Mexico, DataBursatil API) in R.
+
 
 ## Background
-This project started as a personal initiative during my university career at Tecnológico de Monterrey (ITESM), who has agreements with several companies to facilitate students the development of projects attacking the specific problems they have (in this case **Herdez Group** with public data and **L'Oréal Paris Mexico** with private data).
+This project started as a personal initiative during my university career at Tecnológico de Monterrey (ITESM), who has agreements with several companies to facilitate students the development of projects attacking the specific problems they have (in this case **Herdez Group** with public data and **L'Oréal Paris Mexico**).
 
 
 ## Current Development
 These processes will be systematized to analyze on a large scale the evolution of the financial information provided by public companies listed in the SEC (US, through the official [EDGAR package](https://www.sec.gov/edgar/sec-api-documentation) in R) and BMV/BIVA (Mexico, initially through the API of the [DataBursatil](https://databursatil.com/docs.html) project).
 
-### 1. General forecast and financial ratios
+### General forecast and financial ratios
 Obtain the net profit for Q4 of each year and apply different forecasting methods such as **Simple Average**, **Moving Average** (n = 3 and more), **Weighted Moving Average**, **Exponential Smoothing** (using different alphas), etc., calculating their respective **Median Absolute Deviation (MAD)** and highlighting the one with the highest accuracy.
 
 ![Herdez Forecast](./assets/HerdezAnalysis1.png "Herdez Forecast")
@@ -67,6 +68,7 @@ Based on the NPV, IIR, and PI obtained for the pessimistic, expected and optimis
 
 ## Future work
 
+- Degree of Leverage.
 - Local UX/UI.
 
 
