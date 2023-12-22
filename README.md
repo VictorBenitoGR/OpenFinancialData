@@ -5,7 +5,7 @@
 
 The intelligent collection, cleaning, processing and visualization of data is an indispensable process for the efficient, precise, productive and sharp **self-criticism** of any project. 
 
-This project seeks to automate **accounting records**, **financial forecasting** and **investment-depreciation** analysis, allowing to visualize the evolution of public companies listed on the **SEC** (US, through the official EDGAR package) and **BMV/BIVA** (Mexico, DataBursatil API) in R.
+This project seeks to automate **accounting records**, **financial forecasting** and **investment-depreciation** analysis, allowing to visualize the evolution of public companies listed on the **SEC** (US, through the [EDGAR system](https://www.sec.gov/edgar/sec-api-documentation)) and **BMV/BIVA** (Mexico, [DataBursatil API](https://databursatil.com/docs.html)) in R.
 
 
 ## Background
@@ -13,7 +13,6 @@ This project started as a personal initiative during my university career at Tec
 
 
 ## Current Development
-These processes will be systematized to analyze on a large scale the evolution of the financial information provided by public companies listed in the SEC (US, through the official [EDGAR package](https://www.sec.gov/edgar/sec-api-documentation) in R) and BMV/BIVA (Mexico, initially through the API of the [DataBursatil](https://databursatil.com/docs.html) project).
 
 ### General forecast and financial ratios
 Obtain the net profit for Q4 of each year and apply different forecasting methods such as **Simple Average**, **Moving Average** (n = 3 and more), **Weighted Moving Average**, **Exponential Smoothing** (using different alphas), etc., calculating their respective **Median Absolute Deviation (MAD)** and highlighting the one with the highest accuracy.
