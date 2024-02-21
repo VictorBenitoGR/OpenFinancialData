@@ -181,3 +181,59 @@ sp500_low <- do.call(cbind, sp500_low)
 sp500_close <- do.call(cbind, sp500_close)
 sp500_volume <- do.call(cbind, sp500_volume)
 sp500_adjusted <- do.call(cbind, sp500_adjusted)
+
+
+# *** FUNCTION | SUMMARIZE DATA *** -------------------------------------------
+
+# Function to calculate summary statistics for a portfolio
+summarize <- function(df) {
+  summary <- data.frame(
+    Average = colMeans(df),
+    Variance = apply(df, 2, var),
+    Std_Deviation = apply(df, 2, sd),
+
+    # ! Fix problems
+    Beta = apply(
+      df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
+    ),
+    R_squared = apply(
+      df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
+    )
+  )
+  return(summary)
+}
+
+
+# *** SUMMARIZE DATA *** ------------------------------------------------------
+
+# Portfolio summary
+portfolio_open_summary <- summarize(portfolio_open)
+portfolio_high_summary <- summarize(portfolio_high)
+portfolio_low_summary <- summarize(portfolio_low)
+portfolio_close_summary <- summarize(portfolio_close)
+portfolio_volume_summary <- summarize(portfolio_volume)
+portfolio_adjusted_summary <- summarize(portfolio_adjusted)
+
+# SP500 summary
+sp500_open_summary <- summarize(sp500_open)
+sp500_high_summary <- summarize(sp500_high)
+sp500_low_summary <- summarize(sp500_low)
+sp500_close_summary <- summarize(sp500_close)
+sp500_volume_summary <- summarize(sp500_volume)
+sp500_adjusted_summary <- summarize(sp500_adjusted)
+
+
+# *** FUNCTION | CALCULATE BETA AND R2 *** -------------------------------------
+
+# ? Test
+sp500_adjusted <- lapply(sp500, adjusted_price)
+sp500_adjusted <- lapply(sp500_adjusted, xts_to_df)
+sp500_adjusted <- do.call(cbind, sp500_adjusted)
+sp500_adjusted_summary <- summarize(sp500_adjusted)
+
+
+# Get the Ln of sp500_adjusted
+sp500_adjusted$Ln <- log(sp500_adjusted$GSPC.Adjusted)
+View(sp500_adjusted)
+
+View(portfolio_adjusted_summary)
