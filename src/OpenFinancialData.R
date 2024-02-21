@@ -3,168 +3,181 @@
 
 # *** PACKAGES *** ------------------------------------------------------------
 
-# install.packages("PackageName")
-
-# install.packages("edgar")
-# install.packages("jsonlite")
-# install.packages("data.table")
-# install.packages("httr")
-# install.packages("pbapply")
-# install.packages("stringr")
-# install.packages("plyr")
-
-library(edgar) # Retrieves all the available filings from the SEC
-library(jsonlite) # Converts JSON data into R objects
-library(data.table) # Data manipulation
-library(httr) # HTTP client
-library(pbapply) # Progress bar
-library(stringr) # String manipulation
-library(plyr) # Data manipulation
-
-# * ---------------------------------------------------------------------------
-
-# Assign user agent
-PASS <- new.env()
-assign("usrAgent", "companyname.com email@companyName.com", env = PASS)
-
-
-# *** READ IN CK CODES *** ----------------------------------------------------
-
-# read in list of CIK codes
-INFO <- read_json("https://www.sec.gov/files/company_tickers.json")
-INFO <- rbindlist(INFO)
-# CIK numbers are 10 digits - we have to fill in with zeros
-INFO$CIK <- do.call(rbind, lapply(as.list(1:nrow(INFO)), function(ii) {
-  ZEROS <- 10 - as.numeric(str_count(INFO$cik_str[ii]))
-  paste0(c(rep(0, ZEROS), INFO$cik_str[ii]), collapse = "")
-}))
-INFO <- as.data.frame(INFO)
-
-# function to lookup CIK number by ticker
-getCIK <- function(symbol) {
-  subset(INFO, INFO$ticker == paste(symbol))$CIK
+# Function to install and load packages
+repository_packages <- function(libraries) {
+  for (library_name in libraries) {
+    if (!require(library_name, character.only = TRUE)) {
+      install.packages(library_name)
+    }
+    library(library_name, character.only = TRUE)
+  }
 }
 
-# gets all filing values for a specific ticker
-getAllEDGAR <- function(ticker) {
-  # get CIK # for ticker
-  CIK <- getCIK(ticker)
-  # get data by passing in url & headers
-  pg <- GET(
-    url = paste0(
-      "https://data.sec.gov/api/xbrl/companyfacts/CIK",
-      CIK, ".json"
-    ),
-    config = httr::add_headers(
-      `User-Agent` = PASS$usrAgent,
-      `Accept-Encoding` = "gzip, deflate"
-    )
-  )
+# List of packages
+libraries <- c(
+  "quantmod", # Quantitative financial modeling and trading framework
+  "fredr", # Access to Federal Reserve Economic Data (FRED) API
+  "rdrop2", # Dropbox interface for R
+  "rvest", # Web scraping and parsing HTML/XML
+  "openxlsx", # Reading, writing, and editing Excel files
+  "siebanxicor", # Interface for the Siebanxicor API
+  "lubridate", # Working with dates and times
+  "xts", # Uniform handling of different time-based data classes
+  "tidyverse" # Data manipulation and visualization packages
+)
 
-  # raw data
-  data_raw <- try(content(pg, as = "text", encoding = "UTF-8") %>%
-                    fromJSON(pg, flatten = FALSE), silent = TRUE)
+library(conflicted) # Handling conflicts between functions in R packages:
+conflict_prefer("filter", "dplyr")
+conflict_prefer("first", "dplyr")
+conflict_prefer("guess_encoding", "readr")
+conflict_prefer("lag", "dplyr")
+conflict_prefer("last", "dplyr")
 
-
-  # *** DEI *** ---------------------------------------------------------------
-
-  N <- length(data_raw$facts$dei)
-  if (N >= 1) {
-    DEI <- rbindlist(lapply(as.list(1:N), function(ii) {
-      # extract data
-      tmp <- as.data.frame(rbindlist(data_raw$facts$dei[[ii]]$units[[1]],
-        use.names = TRUE, fill = TRUE
-      ))
-      # add description column
-      tmp$desc <- names(data_raw$facts$dei)[ii]
-      # delete duplicates
-      tmp <- tmp[!duplicated(tmp$end), ]
-      # add ticker column
-      tmp$symbol <- ticker
-      # return df
-      tmp
-    }), use.names = TRUE, fill = TRUE)
-  } else {
-    DEI <- NULL
-  }
+# Install and load packages
+repository_packages(libraries) # Load packages and install if necessary
 
 
-  # *** INVEST *** ------------------------------------------------------------
+# *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
 
-  N <- length(data_raw$facts$invest)
-  if (N >= 1) {
-    INVEST <- rbindlist(lapply(as.list(1:N), function(ii) {
-      # extract data
-      tmp <- as.data.frame(rbindlist(data_raw$facts$invest[[ii]]$units[[1]],
-        use.names = TRUE, fill = TRUE
-      ))
-      # Add description column
-      tmp$desc <- names(data_raw$facts$invest)[ii]
-      # Delete duplicates
-      tmp <- tmp[!duplicated(tmp$end), ]
-      # Add ticker column
-      tmp$symbol <- ticker
-      # Return DF
-      tmp
-    }), use.names = TRUE, fill = TRUE)
-  } else {
-    INVEST <- NULL
-  }
+# Ticker symbols of everything you will use
+ticker <- c(
+  "^GSPC", # SP500 | Needed to get Beta and R2
+  "AAPL", "MSFT", "NVDA", "AMZN", "META",
+  "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
+  "TMO", "JPM", "UNH", "V", "XOM",
+  "MA", "JNJ", "PG", "HD", "MRK",
+  "COST", "ABBV", "AMD", "CRM", "CVX",
+  "ADBE", "NFLX", "WMT", "KO", "BAC"
+)
 
+# quantmod function to get the data
+getSymbols(
+  ticker,
+  src = "yahoo",
+  from = Sys.Date() - 3652, # 3652days = 10years
+  to = Sys.Date()
+)
 
-  # *** SRT *** ---------------------------------------------------------------
-  N <- length(data_raw$facts$srt)
-  if (N >= 1) {
-    SRT <- rbindlist(lapply(as.list(1:N), function(ii) {
-      # Extract data
-      tmp <- as.data.frame(rbindlist(data_raw$facts$srt[[ii]]$units[[1]],
-        use.names = TRUE, fill = TRUE
-      ))
-      # Add description column
-      tmp$desc <- names(data_raw$facts$srt)[ii]
-      # Delete duplicates
-      tmp <- tmp[!duplicated(tmp$end), ]
-      # Add ticker column
-      tmp$symbol <- ticker
-      # Return DF
-      tmp
-    }), use.names = TRUE, fill = TRUE)
-  } else {
-    SRT <- NULL
-  }
+# SP500, necessary to get Beta and R2
+sp500 <- list(GSPC)
+
+# Actual tickers of the portfolio
+list_of_tickers <- list(
+  AAPL, MSFT, NVDA, AMZN, META,
+  GOOGL, GOOG, LLY, TSLA, AVGO,
+  TMO, JPM, UNH, V, XOM,
+  MA, JNJ, PG, HD, MRK,
+  COST, ABBV, AMD, CRM, CVX,
+  ADBE, NFLX, WMT, KO, BAC
+)
+
+# ? Open (O): The price of the asset at the beginning of the trading period.
+# ? High (H): The highest price reached by the asset.
+# ? Low (L): The lowest price reached by the asset.
+# ? Close (C): The price of the asset at the end of the trading period.
+# ? Volume (V): The total number of shares or contracts traded.
+# ? Adjusted (Adj or Adjusted): The adjusted closing price accounts for
+# ? corporate actions like dividends, stock splits, and new stock offerings.
 
 
-  # *** US-GAAP *** -----------------------------------------------------------
-  N <- length(data_raw$facts$`us-gaap`)
-  if (N >= 1) {
-    GAAP <- rbindlist(lapply(as.list(1:N), function(ii) {
-      # Extract data
-      tmp <- as.data.frame(rbindlist(data_raw$facts$`us-gaap`[[ii]]$units[[1]],
-        use.names = TRUE, fill = TRUE
-      ))
-      # Add description column
-      tmp$desc <- names(data_raw$facts$`us-gaap`)[ii]
-      # Delete duplicates
-      tmp <- tmp[!duplicated(tmp$end), ]
-      # Add ticker column
-      tmp$symbol <- ticker
-      # Return DF
-      tmp
-    }), use.names = TRUE, fill = TRUE)
-    # re-order
-    GAAP <- GAAP[, c("start", "end", "val", "accn", "fy", "fp", "form",
-      "filed", "frame", "desc", "symbol"
-    )]
-  } else {
-    GAAP <- NULL
-  }
-  # Combine ALL data
-  ALL <- rbind.fill(GAAP, DEI, SRT, INVEST)
-  # Return data frame
-  ALL
+# *** FUNCTIONS | SPLIT BY TYPES *** ------------------------------------------
+
+# * Function to select columns containing the word "Open"
+open_price <- function(df) {
+  open_columns <- grep("Open", names(df), value = TRUE)
+  return(df[, open_columns, drop = FALSE])
 }
 
-# *** TEST *** ----------------------------------------------------------------
+# * Function to select columns containing the word "High"
+high_price <- function(df) {
+  high_columns <- grep("High", names(df), value = TRUE)
+  return(df[, high_columns, drop = FALSE])
+}
 
-# Test function
-df <- getAllEDGAR(ticker = "TSLA")
+# * Function to select columns containing the word "Low"
+low_price <- function(df) {
+  low_columns <- grep("Low", names(df), value = TRUE)
+  return(df[, low_columns, drop = FALSE])
+}
+
+# * Function to select columns containing the word "Close"
+close_price <- function(df) {
+  close_columns <- grep("Close", names(df), value = TRUE)
+  return(df[, close_columns, drop = FALSE])
+}
+
+# * Function to select columns containing the word "Volume"
+volume <- function(df) {
+  volume_columns <- grep("Volume", names(df), value = TRUE)
+  return(df[, volume_columns, drop = FALSE])
+}
+
+# * Function to select columns containing the word "Adjusted"
+adjusted_price <- function(df) {
+  adjusted_columns <- grep("Adjusted", names(df), value = TRUE)
+  return(df[, adjusted_columns, drop = FALSE])
+}
+
+# *** SPLIT BY TYPES *** ------------------------------------------------------
+
+# ! DON'T OPEN THEM, IT WILL CRASH SINCE THEY ARE NOT DATAFRAMES
+# Portfolio with open, high, low, close, volume and adjusted prices
+portfolio_open <- lapply(list_of_tickers, open_price)
+portfolio_high <- lapply(list_of_tickers, high_price)
+portfolio_low <- lapply(list_of_tickers, low_price)
+portfolio_close <- lapply(list_of_tickers, close_price)
+portfolio_volume <- lapply(list_of_tickers, volume)
+portfolio_adjusted <- lapply(list_of_tickers, adjusted_price)
+
+# SP500 with adjusted price
+sp500_open <- lapply(sp500, open_price)
+sp500_high <- lapply(sp500, high_price)
+sp500_low <- lapply(sp500, low_price)
+sp500_close <- lapply(sp500, close_price)
+sp500_volume <- lapply(sp500, volume)
+sp500_adjusted <- lapply(sp500, adjusted_price)
+
+
+# *** FUNCTION | XTS TO DF *** ------------------------------------------------
+
+# * Function to convert previous xts lists to data frames
+xts_to_df <- function(xts_object) {
+  as.data.frame(xts_object)
+}
+
+
+# *** XTS TO DF *** -----------------------------------------------------------
+
+# * Portfolio
+# Use lapply to convert each xts object to a data frame
+portfolio_open <- lapply(portfolio_open, xts_to_df)
+portfolio_high <- lapply(portfolio_high, xts_to_df)
+portfolio_low <- lapply(portfolio_low, xts_to_df)
+portfolio_close <- lapply(portfolio_close, xts_to_df)
+portfolio_volume <- lapply(portfolio_volume, xts_to_df)
+portfolio_adjusted <- lapply(portfolio_adjusted, xts_to_df)
+
+# Combine the data frames into a single data frame
+portfolio_open <- do.call(cbind, portfolio_open)
+portfolio_high <- do.call(cbind, portfolio_high)
+portfolio_low <- do.call(cbind, portfolio_low)
+portfolio_close <- do.call(cbind, portfolio_close)
+portfolio_volume <- do.call(cbind, portfolio_volume)
+portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
+
+# * SP500
+# Use lapply to convert each xts object to a data frame
+sp500_open <- lapply(sp500_open, xts_to_df)
+sp500_high <- lapply(sp500_high, xts_to_df)
+sp500_low <- lapply(sp500_low, xts_to_df)
+sp500_close <- lapply(sp500_close, xts_to_df)
+sp500_volume <- lapply(sp500_volume, xts_to_df)
+sp500_adjusted <- lapply(sp500_adjusted, xts_to_df)
+
+# Combine the data frames into a single data frame
+sp500_open <- do.call(cbind, sp500_open)
+sp500_high <- do.call(cbind, sp500_high)
+sp500_low <- do.call(cbind, sp500_low)
+sp500_close <- do.call(cbind, sp500_close)
+sp500_volume <- do.call(cbind, sp500_volume)
+sp500_adjusted <- do.call(cbind, sp500_adjusted)
