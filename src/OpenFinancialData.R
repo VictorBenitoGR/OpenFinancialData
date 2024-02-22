@@ -17,13 +17,18 @@ repository_packages <- function(libraries) {
 libraries <- c(
   "quantmod", # Quantitative financial modeling and trading framework
   "fredr", # Access to Federal Reserve Economic Data (FRED) API
+  "TTR", # Technical Trading Rules
   "rdrop2", # Dropbox interface for R
   "rvest", # Web scraping and parsing HTML/XML
   "openxlsx", # Reading, writing, and editing Excel files
   "siebanxicor", # Interface for the Siebanxicor API
   "lubridate", # Working with dates and times
   "xts", # Uniform handling of different time-based data classes
-  "tidyverse" # Data manipulation and visualization packages
+  "tibble", # Simple data frames
+  "tidyverse", # Data manipulation and visualization packages
+  "ggplot2", # Plotting system for R
+  "ggpattern", # Geoms for patterned filled geoms
+  "hrbrthemes" # Opinionated, typographic-centric ggplot2 themes
 )
 
 library(conflicted) # Handling conflicts between functions in R packages:
@@ -41,7 +46,7 @@ repository_packages(libraries) # Load packages and install if necessary
 
 # Ticker symbols of everything you will use
 ticker <- c(
-  "^GSPC", # SP500 | Needed to get Beta and R2
+  "^GSPC", "MSCI", # Benchmarks (SP500 and MSCI)
   "AAPL", "MSFT", "NVDA", "AMZN", "META",
   "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
   "TMO", "JPM", "UNH", "V", "XOM",
@@ -58,8 +63,9 @@ getSymbols(
   to = Sys.Date()
 )
 
-# SP500, necessary to get Beta and R2
-sp500 <- list(GSPC)
+# ! DO NOT OPEN ANYTHING THAT IS NOT A DATAFRAME, IT WILL CRASH <--------------
+# Benchmarks, necessary to get Beta and R2
+benchmark <- list(GSPC, MSCI)
 
 # Actual tickers of the portfolio
 list_of_tickers <- list(
@@ -120,7 +126,7 @@ adjusted_price <- function(df) {
 
 # *** SPLIT BY TYPES *** ------------------------------------------------------
 
-# ! DON'T OPEN THEM, IT WILL CRASH SINCE THEY ARE NOT DATAFRAMES
+# ! DO NOT OPEN THEM, IT WILL CRASH SINCE THEY ARE NOT DATAFRAMES
 # Portfolio with open, high, low, close, volume and adjusted prices
 portfolio_open <- lapply(list_of_tickers, open_price)
 portfolio_high <- lapply(list_of_tickers, high_price)
@@ -129,20 +135,21 @@ portfolio_close <- lapply(list_of_tickers, close_price)
 portfolio_volume <- lapply(list_of_tickers, volume)
 portfolio_adjusted <- lapply(list_of_tickers, adjusted_price)
 
-# SP500 with adjusted price
-sp500_open <- lapply(sp500, open_price)
-sp500_high <- lapply(sp500, high_price)
-sp500_low <- lapply(sp500, low_price)
-sp500_close <- lapply(sp500, close_price)
-sp500_volume <- lapply(sp500, volume)
-sp500_adjusted <- lapply(sp500, adjusted_price)
+# Benchmark with adjusted price
+benchmark_open <- lapply(benchmark, open_price)
+benchmark_high <- lapply(benchmark, high_price)
+benchmark_low <- lapply(benchmark, low_price)
+benchmark_close <- lapply(benchmark, close_price)
+benchmark_volume <- lapply(benchmark, volume)
+benchmark_adjusted <- lapply(benchmark, adjusted_price)
 
 
 # *** FUNCTION | XTS TO DF *** ------------------------------------------------
 
 # * Function to convert previous xts lists to data frames
 xts_to_df <- function(xts_object) {
-  as.data.frame(xts_object)
+  df <- as.data.frame(xts_object)
+  return(df)
 }
 
 
@@ -165,41 +172,81 @@ portfolio_close <- do.call(cbind, portfolio_close)
 portfolio_volume <- do.call(cbind, portfolio_volume)
 portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
 
-# * SP500
+# * Benchmark
 # Use lapply to convert each xts object to a data frame
-sp500_open <- lapply(sp500_open, xts_to_df)
-sp500_high <- lapply(sp500_high, xts_to_df)
-sp500_low <- lapply(sp500_low, xts_to_df)
-sp500_close <- lapply(sp500_close, xts_to_df)
-sp500_volume <- lapply(sp500_volume, xts_to_df)
-sp500_adjusted <- lapply(sp500_adjusted, xts_to_df)
+benchmark_open <- lapply(benchmark_open, xts_to_df)
+benchmark_high <- lapply(benchmark_high, xts_to_df)
+benchmark_low <- lapply(benchmark_low, xts_to_df)
+benchmark_close <- lapply(benchmark_close, xts_to_df)
+benchmark_volume <- lapply(benchmark_volume, xts_to_df)
+benchmark_adjusted <- lapply(benchmark_adjusted, xts_to_df)
 
 # Combine the data frames into a single data frame
-sp500_open <- do.call(cbind, sp500_open)
-sp500_high <- do.call(cbind, sp500_high)
-sp500_low <- do.call(cbind, sp500_low)
-sp500_close <- do.call(cbind, sp500_close)
-sp500_volume <- do.call(cbind, sp500_volume)
-sp500_adjusted <- do.call(cbind, sp500_adjusted)
+benchmark_open <- do.call(cbind, benchmark_open)
+benchmark_high <- do.call(cbind, benchmark_high)
+benchmark_low <- do.call(cbind, benchmark_low)
+benchmark_close <- do.call(cbind, benchmark_close)
+benchmark_volume <- do.call(cbind, benchmark_volume)
+benchmark_adjusted <- do.call(cbind, benchmark_adjusted)
+
+# *** GET THE DATE COLUMN *** -------------------------------------------------
+
+# * You can't use the "first" column, use this from library(tibble)
+# Portfolio
+portfolio_open <- rownames_to_column(portfolio_open, "Date")
+portfolio_high <- rownames_to_column(portfolio_high, "Date")
+portfolio_low <- rownames_to_column(portfolio_low, "Date")
+portfolio_close <- rownames_to_column(portfolio_close, "Date")
+portfolio_volume <- rownames_to_column(portfolio_volume, "Date")
+portfolio_adjusted <- rownames_to_column(portfolio_adjusted, "Date")
+
+# Benchmark
+benchmark_open <- rownames_to_column(benchmark_open, "Date")
+benchmark_high <- rownames_to_column(benchmark_high, "Date")
+benchmark_low <- rownames_to_column(benchmark_low, "Date")
+benchmark_close <- rownames_to_column(benchmark_close, "Date")
+benchmark_volume <- rownames_to_column(benchmark_volume, "Date")
+benchmark_adjusted <- rownames_to_column(benchmark_adjusted, "Date")
+
+
+# *** CHARACTER TO DATE *** ---------------------------------------------------
+
+# ? You need to give Date its proper format
+# * Portfolio
+portfolio_open$Date <- as.Date(portfolio_open$Date, format = "%Y-%m-%d")
+portfolio_high$Date <- as.Date(portfolio_high$Date, format = "%Y-%m-%d")
+portfolio_low$Date <- as.Date(portfolio_low$Date, format = "%Y-%m-%d")
+portfolio_close$Date <- as.Date(portfolio_close$Date, format = "%Y-%m-%d")
+portfolio_volume$Date <- as.Date(portfolio_volume$Date, format = "%Y-%m-%d")
+portfolio_adjusted$Date <- as.Date(portfolio_adjusted$Date, format = "%Y-%m-%d")
+
+# * Benchmark
+benchmark_open$Date <- as.Date(benchmark_open$Date, format = "%Y-%m-%d")
+benchmark_high$Date <- as.Date(benchmark_high$Date, format = "%Y-%m-%d")
+benchmark_low$Date <- as.Date(benchmark_low$Date, format = "%Y-%m-%d")
+benchmark_close$Date <- as.Date(benchmark_close$Date, format = "%Y-%m-%d")
+benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
+benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 
 
 # *** FUNCTION | SUMMARIZE DATA *** -------------------------------------------
 
 # Function to calculate summary statistics for a portfolio
 summarize <- function(df) {
+  df <- df[, -1] # Remove the first column (Date)
   summary <- data.frame(
     Average = colMeans(df),
     Variance = apply(df, 2, var),
-    Std_Deviation = apply(df, 2, sd),
-
+    Std_Deviation = apply(df, 2, sd)
     # ! Fix problems
-    Beta = apply(
-      df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
-    ),
-    R_squared = apply(
-      df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
-    )
+    # Beta = apply(
+    #   df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
+    # ),
+    # R_squared = apply(
+    #   df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
   )
+  # Convert row names to a column named "Tickers"
+  summary <- rownames_to_column(summary, "Tickers")
   return(summary)
 }
 
@@ -208,32 +255,72 @@ summarize <- function(df) {
 
 # Portfolio summary
 portfolio_open_summary <- summarize(portfolio_open)
+View(portfolio_open_summary)
 portfolio_high_summary <- summarize(portfolio_high)
 portfolio_low_summary <- summarize(portfolio_low)
 portfolio_close_summary <- summarize(portfolio_close)
 portfolio_volume_summary <- summarize(portfolio_volume)
 portfolio_adjusted_summary <- summarize(portfolio_adjusted)
 
-# SP500 summary
-sp500_open_summary <- summarize(sp500_open)
-sp500_high_summary <- summarize(sp500_high)
-sp500_low_summary <- summarize(sp500_low)
-sp500_close_summary <- summarize(sp500_close)
-sp500_volume_summary <- summarize(sp500_volume)
-sp500_adjusted_summary <- summarize(sp500_adjusted)
+# Benchmark summary
+benchmark_open_summary <- summarize(benchmark_open)
+benchmark_high_summary <- summarize(benchmark_high)
+benchmark_low_summary <- summarize(benchmark_low)
+benchmark_close_summary <- summarize(benchmark_close)
+benchmark_volume_summary <- summarize(benchmark_volume)
+benchmark_adjusted_summary <- summarize(benchmark_adjusted)
 
 
 # *** FUNCTION | CALCULATE BETA AND R2 *** -------------------------------------
 
-# ? Test
-sp500_adjusted <- lapply(sp500, adjusted_price)
-sp500_adjusted <- lapply(sp500_adjusted, xts_to_df)
-sp500_adjusted <- do.call(cbind, sp500_adjusted)
-sp500_adjusted_summary <- summarize(sp500_adjusted)
+# # ? Test
+# benchmark_adjusted <- lapply(benchmark, adjusted_price)
+# benchmark_adjusted <- lapply(benchmark_adjusted, xts_to_df)
+# benchmark_adjusted <- do.call(cbind, benchmark_adjusted)
+# benchmark_adjusted_summary <- summarize(benchmark_adjusted)
 
 
-# Get the Ln of sp500_adjusted
-sp500_adjusted$Ln <- log(sp500_adjusted$GSPC.Adjusted)
-View(sp500_adjusted)
+# # Get the Ln of benchmark_adjusted
+# benchmark_adjusted$Ln <- log(benchmark_adjusted$GSPC.Adjusted)
+# View(benchmark_adjusted)
 
-View(portfolio_adjusted_summary)
+# View(portfolio_adjusted_summary)
+
+
+# *** VISUALIZATION *** -------------------------------------------------------
+
+appl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
+  x = Date, y = AAPL.Adjusted
+)) +
+  geom_area_pattern(
+    data = portfolio_adjusted,
+    pattern = "gradient",
+    fill = "#00000000",
+    pattern_fill = "#00000000",
+    pattern_fill2 = "#10006b"
+  ) +
+  ggtitle("APPL price adjusted") +
+  labs(
+    subtitle = "Evolution of Apple over the last 10 years",
+    y = "Price",
+    caption = "R Plot: @VictorBenitoGR | GitHub Repository: VictorBenitoGR/OpenFinancialData" # nolint: line_length_linter.
+  ) +
+  geom_smooth(method = loess, color = "red", fill = "#69b3a2", se = TRUE) +
+  theme_ipsum() +
+  theme(
+    plot.title = element_text(size = 28),
+    plot.subtitle = element_text(size = 22),
+    axis.title.x = element_blank(), # Remove x-axis label
+    axis.title.y = element_blank(), # Remove y-axis label
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    plot.caption = element_text(size = 15),
+    panel.border = element_blank(),
+    axis.line.x = element_line(),
+    axis.ticks = element_blank()
+  )
+
+# Save the plot
+ggsave("./assets/adjusted_plot/appl_adjusted_plot.jpg", appl_adjusted_plot,
+  width = 16, height = 9
+)

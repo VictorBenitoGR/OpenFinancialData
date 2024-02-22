@@ -45,9 +45,9 @@ ticker <- c(
 getSymbols(
   ticker,
   src = "yahoo",
-  from = Sys.Date() - 3652,
+  from = Sys.Date() - 3652, # 3652days = 10years
   to = Sys.Date()
-) # 3652days = 10years
+)
 
 # ? Open (O): The price of the asset at the beginning of the trading period.
 
@@ -62,13 +62,17 @@ getSymbols(
 # ? Adjusted (Adj or Adjusted): The adjusted closing price accounts for
 # ? corporate actions like dividends, stock splits, and new stock offerings.
 
+
+
 # * PORTFOLIO (Adjusted) ------------------------------------------------------
 
 # SP500
 SP500 <- list(GSPC)
 
+
+
 # Sample list of data frames
-list_of_tickets <- list(
+list_of_tickers <- list(
   AAPL, MSFT, NVDA, AMZN, META,
   GOOGL, GOOG, LLY, TSLA, AVGO,
   TMO, JPM, UNH, V, XOM,
@@ -78,14 +82,14 @@ list_of_tickets <- list(
 )
 
 # Function to select columns containing the word "Adjusted"
-select_adjusted_columns <- function(df) {
+adjusted_price <- function(df) {
   adjusted_columns <- grep("Adjusted", names(df), value = TRUE)
   return(df[, adjusted_columns, drop = FALSE])
 }
 
 # Use lapply to apply the function to each data frame in the list
-Portfolio.Adjusted <- lapply(list_of_tickets, select_adjusted_columns)
-SP500 <- lapply(list_of_tickets, select_adjusted_columns)
+Portfolio.Adjusted <- lapply(list_of_tickers, select_adjusted_columns)
+SP500 <- lapply(list_of_tickers, select_adjusted_columns)
 
 
 library(xts) # Provide for uniform handling of different time-based data classes
