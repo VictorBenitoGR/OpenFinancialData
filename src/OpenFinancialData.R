@@ -44,26 +44,23 @@ repository_packages(libraries) # Load packages and install if necessary
 
 # *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
 
-# Ticker symbols of everything you will use
-ticker <- c(
-  "^GSPC", "MSCI", # Benchmarks (SP500 and MSCI)
-  "AAPL", "MSFT", "NVDA", "AMZN", "META",
-  "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
-  "TMO", "JPM", "UNH", "V", "XOM",
-  "MA", "JNJ", "PG", "HD", "MRK",
-  "COST", "ABBV", "AMD", "CRM", "CVX",
-  "ADBE", "NFLX", "WMT", "KO", "BAC"
-)
-
-# quantmod function to get the data
-getSymbols(
-  ticker,
+# ! DON'T OPEN ANYTHING THAT'S NOT A DATAFRAME IF YOUR'E USING VSCODE
+# Obtain the ticker symbols
+na.omit(quantmod::getSymbols(
+  c(
+    "^GSPC", "MSCI", # Benchmarks (SP500 and MSCI)
+    "AAPL", "MSFT", "NVDA", "AMZN", "META",
+    "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
+    "TMO", "JPM", "UNH", "V", "XOM",
+    "MA", "JNJ", "PG", "HD", "MRK",
+    "COST", "ABBV", "AMD", "CRM", "CVX",
+    "ADBE", "NFLX", "WMT", "KO", "BAC"
+  ),
   src = "yahoo",
   from = Sys.Date() - 3652, # 3652days = 10years
   to = Sys.Date()
-)
+))
 
-# ! DO NOT OPEN ANYTHING THAT IS NOT A DATAFRAME, IT WILL CRASH <--------------
 # Benchmarks, necessary to get Beta and R2
 benchmark <- list(GSPC, MSCI)
 
@@ -151,6 +148,11 @@ xts_to_df <- function(xts_object) {
   df <- as.data.frame(xts_object)
   return(df)
 }
+
+# * Function to convert previous xts lists to data frames
+xts_to_df <- function(xts_object) {
+  df <- as.data.frame(xts_object)
+  return(df)
 
 
 # *** XTS TO DF *** -----------------------------------------------------------
@@ -245,6 +247,8 @@ summarize <- function(df) {
     # R_squared = apply(
     #   df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
   )
+  install.packages("tibble")
+  library(tibble)
   # Convert row names to a column named "Tickers"
   summary <- rownames_to_column(summary, "Tickers")
   return(summary)
@@ -255,7 +259,6 @@ summarize <- function(df) {
 
 # Portfolio summary
 portfolio_open_summary <- summarize(portfolio_open)
-View(portfolio_open_summary)
 portfolio_high_summary <- summarize(portfolio_high)
 portfolio_low_summary <- summarize(portfolio_low)
 portfolio_close_summary <- summarize(portfolio_close)
@@ -289,7 +292,7 @@ benchmark_adjusted_summary <- summarize(benchmark_adjusted)
 
 # *** VISUALIZATION *** -------------------------------------------------------
 
-appl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
+ggplot(portfolio_adjusted, aes(
   x = Date, y = AAPL.Adjusted
 )) +
   geom_area_pattern(
@@ -321,6 +324,105 @@ appl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
   )
 
 # Save the plot
-ggsave("./assets/adjusted_plot/appl_adjusted_plot.jpg", appl_adjusted_plot,
+ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", appl_adjusted_plot,
   width = 16, height = 9
 )
+
+
+# !!! TESTS !!! ---------------------------------------------------------------
+plot(Ad(AAPL))
+
+
+chart_Series(AAPL,
+  name = NULL,
+  type = "candlesticks",
+  subset = "",
+  TA = "",
+  pars = chart_pars(),
+  theme = chart_theme(),
+  clev = 0
+)
+
+# Get it
+aapl <- list(AAPL)
+# Use lapply to convert each xts object to a data frame
+aapl <- lapply(aapl, xts_to_df)
+# Combine the data frames into a single data frame
+aapl <- do.call(cbind, aapl)
+# You can't use the "first" column, use this from library(tibble)
+aapl <- rownames_to_column(aapl, "Date")
+# You need to give Date its proper format
+aapl$Date <- as.Date(aapl$Date, format = "%Y-%m-%d")
+View(aapl)
+
+# "TTR Composite" (simulated data)
+data(aapl)
+
+# Bollinger Bands
+bbands <- BBands(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
+
+# Directional Movement Index
+adx <- ADX(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
+
+# Moving Averages
+ema <- EMA(aapl[, "AAPL.Close"], n = 20)
+sma <- SMA(aapl[, "AAPL.Close"], n = 20)
+
+# MACD
+macd <- MACD(aapl[, "AAPL.Close"])
+
+# RSI
+rsi <- RSI(aapl[, "AAPL.Close"])
+
+# Stochastics
+stoch <- stoch(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
+# TTR works with the chartSeries() function in quantmod. Here's an example that
+# uses chartSeries() and adds TTR-calculated indicators and overlays to the
+# chart.
+
+# "TTR Composite" (simulated data)
+data(AAPL)
+
+# Use quantmod's OHLCV extractor function to help create an xts object
+xaapl <- xts(OHLCV(aapl), aapl[["Date"]])
+
+chartSeries(xaapl, subset = "2019-02-22/", theme = "white")
+addBBands()
+addRSI()
+
+
+
+ggsave("./aapl.jpg", xaapl, width = 16, height = 9)
+
+# *** EXPORT IF NECESSARY *** ------------------------------------------------
+
+# Function to export dataframes to an Excel file
+export_to_excel <- function(file, sheet_names, dataframes) {
+  library(openxlsx)
+
+  # Create a new workbook
+  wb <- createWorkbook()
+
+  # Add each dataframe to the workbook as a new sheet
+  for (i in seq_along(sheet_names)) {
+    addWorksheet(wb, sheet_names[i])
+    writeData(
+      wb,
+      sheet = sheet_names[i], x = dataframes[[i]], startCol = 1, startRow = 1
+    )
+  }
+
+  # Save the workbook as xlsx file
+  saveWorkbook(wb, file)
+}
+
+# Usage example
+export_to_excel("./data/stock_prices.xlsx", c(
+  "portfolio_open", "portfolio_high", "portfolio_low", "portfolio_close",
+  "portfolio_volume", "portfolio_adjusted", "benchmark_open", "benchmark_high",
+  "benchmark_low", "benchmark_close", "benchmark_volume", "benchmark_adjusted"
+), list(
+  portfolio_open, portfolio_high, portfolio_low, portfolio_close,
+  portfolio_volume, portfolio_adjusted, benchmark_open, benchmark_high,
+  benchmark_low, benchmark_close, benchmark_volume, benchmark_adjusted
+))
