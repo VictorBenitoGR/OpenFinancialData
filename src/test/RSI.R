@@ -380,7 +380,7 @@ fourth_sell_index <- which(
   df_b$Trade == "sell" & index(df_b) > index(df_b)[fourth_buy_index]
 )[1]
 # Calculate average price and return for first buy-sell pair
-if (!is.na(first_buy_index) & !is.na(first_sell_index)) {
+if (!is.na(first_buy_index) && !is.na(first_sell_index)) {
   buy_prices_1 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) <= index(df_b)[first_sell_index]
   ), "Close"]
@@ -393,7 +393,7 @@ if (!is.na(first_buy_index) & !is.na(first_sell_index)) {
 }
 
 # Calculate average price and return for second buy-sell pair
-if (!is.na(second_buy_index) & !is.na(second_sell_index)) {
+if (!is.na(second_buy_index) && !is.na(second_sell_index)) {
   buy_prices_2 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) > index(df_b)[first_sell_index] &
       index(df_b) < index(df_b)[second_sell_index]
@@ -407,7 +407,7 @@ if (!is.na(second_buy_index) & !is.na(second_sell_index)) {
 }
 
 # Calculate average price and return for third buy-sell pair
-if (!is.na(third_buy_index) & !is.na(third_sell_index)) {
+if (!is.na(third_buy_index) && !is.na(third_sell_index)) {
   buy_prices_3 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) > index(df_b)[second_sell_index] &
       index(df_b) < index(df_b)[third_sell_index]
@@ -422,7 +422,7 @@ if (!is.na(third_buy_index) & !is.na(third_sell_index)) {
 
 
 # Calculate average price and return for fourth buy-sell pair
-if (!is.na(fourth_buy_index) & !is.na(fourth_sell_index)) {
+if (!is.na(fourth_buy_index) && !is.na(fourth_sell_index)) {
   buy_prices_4 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) > index(df_b)[third_sell_index] &
       index(df_b) < index(df_b)[fourth_sell_index]
