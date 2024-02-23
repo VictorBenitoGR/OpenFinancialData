@@ -1,4 +1,5 @@
-# * RSI Trading Strategy
+# * OpenFinancialData | RSI Trading Strategy
+# * https://github.com/VictorBenitoGR/OpenFInancialData
 
 # *** PACKAGES *** ------------------------------------------------------------
 
@@ -21,51 +22,53 @@ libraries <- c(
   "zoo", # S3 Infrastructure for Regular and Irregular Time Series
   "dplyr", # A Grammar of Data Manipulation
   "DT", # A Wrapper of the JavaScript Library "DataTables"
-  "patchwork" # The Composer of ggplots
+  "patchwork" # Combine separate ggplots into the same graphic
 )
 
 # Install and load packages
 repository_packages(libraries) # Load packages and install if necessary
 
-# # Get it
-# aapl <- list(AAPL)
-# # Use lapply to convert each xts object to a data frame
-# aapl <- lapply(aapl, xts_to_df)
-# # Combine the data frames into a single data frame
-# aapl <- do.call(cbind, aapl)
-# # You can't use the "first" column, use this from library(tibble)
-# aapl <- rownames_to_column(aapl, "Date")
-# # You need to give Date its proper format
-# aapl$Date <- as.Date(aapl$Date, format = "%Y-%m-%d")
-# View(aapl)
+# *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
 
 # * Start here
 # Specify the ticker symbol and the source
-symbol <- "AAPL"
+symbol <- "NVDA"
 
 # Import the historical stock prices
-aapl <- getSymbols(
+nvda <- getSymbols(
   symbol,
   src = "yahoo",
-  from = Sys.Date() - 1826, # 1826days = 5years
+  from = Sys.Date() - 1095, # 1095days = 3years
   to = Sys.Date()
 )
 
+# ? Open (O): The price of the asset at the beginning of the trading period.
+# ? High (H): The highest price reached by the asset.
+# ? Low (L): The lowest price reached by the asset.
+# ? Close (C): The price of the asset at the end of the trading period.
+# ? Volume (V): The total number of shares or contracts traded.
+# ? Adjusted (Adj or Adjusted): The adjusted closing price accounts for
+# ? corporate actions like dividends, stock splits, and new stock offerings.
+
+
+# *** SPLIT BY TYPES *** ------------------------------------------------------
 
 # Extract the adjusted close prices
 prices <- Cl(get(symbol))
 
+
+# ***  RSI | INTERACTIVE *** --------------------------------------------------
+
 # Calculate the RSI
 rsi <- RSI(prices)
 
-
 # Use highcharter for visualization
-hc1 <- hchart(AAPL) %>%
-  hc_title(text = "Daily Stock Price of AAPL (2022M1 - 2023M3)") %>%
+hc1 <- hchart(NVDA) %>%
+  hc_title(text = "Daily Stock Price of NVDA (2021 - 2024)") %>%
   hc_xAxis(type = "datetime") %>%
   hc_yAxis(title = list(text = "Price"))
 hc2 <- hchart(rsi) %>%
-  hc_title(text = "RSI of AAPL (2022M1 - 2023M3)") %>%
+  hc_title(text = "RSI of NVDA (2021 - 2024)") %>%
   hc_xAxis(type = "datetime") %>%
   hc_yAxis(title = list(text = "RSI"))
 
@@ -73,15 +76,15 @@ grid <- hw_grid(list(hc1, hc2), ncol = 1) # Plot two graphs in one grid
 grid
 
 
+# *** RSI PLOTS *** -----------------------------------------------------------
+
 # dataframe for RSI and Close price
 rsi_df <- data.frame(
   date = index(rsi),
   rsi = coredata(rsi),
-  close = as.numeric(AAPL$AAPL.Close)
+  close = as.numeric(NVDA$NVDA.Close)
 )
 datatable(rsi_df)
-
-
 
 # Plot RSI with shaded areas
 gg1 <- ggplot(rsi_df, aes(x = date, y = rsi)) +
@@ -102,7 +105,6 @@ gg1 <- ggplot(rsi_df, aes(x = date, y = rsi)) +
   ) +
   theme_light()
 
-
 # Plot the stock price with shaded areas
 gg2 <- ggplot(rsi_df, aes(x = date, y = close)) +
   geom_line(linewidth = 1, color = "cornflowerblue") +
@@ -112,7 +114,7 @@ gg2 <- ggplot(rsi_df, aes(x = date, y = close)) +
   ), fill = "blue", alpha = 0.2) +
   geom_rect(aes(
     xmin = date, xmax = lead(date),
-    ymin = -Inf, ymax = ifelse(rsi > 60, Inf, NA)
+    ymin = -Inf, ymax = ifelse(rsi > 70, Inf, NA)
   ), fill = "red", alpha = 0.2) +
   labs(title = paste(
     "Close Price for", symbol
@@ -124,14 +126,16 @@ gg2 <- ggplot(rsi_df, aes(x = date, y = close)) +
   theme_light()
 
 # Helps plot two graphs in one grid for ggplot2 objects
-gg2 + gg1 + plot_layout(ncol = 1)
-
+nvda_close_rsi <- gg2 + gg1 + plot_layout(ncol = 1)
+ggsave("./assets/rsi/nvda_close_rsi.jpg", nvda_close_rsi,
+  width = 16, height = 9
+)
 
 # The blue area shows where the RSI is less than 30 and the red area shows where
-# the RSI is over 60. In this exercise we used 60 as the standard not 70
-# considering that the stock market was in correction since last year.
+# the RSI is over 60.
 
-# RSI Trading For this part, we are going to implement RSI trading strategy. We
+# *** RSI TRADING *** ---------------------------------------------------------
+# For this part, we are going to implement RSI trading strategy. We
 # are going to buy the stock when the RSI below 30 recovers and goes above 30
 # and sell it when RSI above 60 goes down below 60, and then repeat this process
 # again until we find all of the trading points.
@@ -235,7 +239,7 @@ gg_rsi1 <- ggplot(nf, aes(x = Date, y = Close)) +
     values = c("buy" = "grey30", "sell" = "orangered")
   ) +
   labs(x = "Date", y = "Price", color = "Signal") +
-  ggtitle("RSI Trading Signal (AAPL)") +
+  ggtitle("RSI Trading Signal (NVDA)") +
   scale_x_date(
     date_breaks = "2 months",
     date_labels = "%Y-%m"
@@ -244,6 +248,11 @@ gg_rsi1 <- ggplot(nf, aes(x = Date, y = Close)) +
   theme(legend.position = "top")
 
 gg_rsi1
+
+ggsave(
+  "./assets/rsi/nvda_rsi_trading_signal.jpg", gg_rsi1,
+  width = 16, height = 9
+)
 
 
 # Calculate Returns
@@ -281,7 +290,7 @@ gg1 <- ggplot(returns_df, aes(
 )) +
   geom_bar(stat = "identity", color = "black", width = 0.5) +
   labs(
-    title = "Returns from RSI Trading Strategy for AAPL",
+    title = "Returns from RSI Trading Strategy for NVDA",
     y = "Return",
     x = "Trade"
   ) +
@@ -292,30 +301,37 @@ gg1 <- ggplot(returns_df, aes(
     label = scales::percent(Return), y = Return - 0.01
   ), size = 4) +
   theme(legend.position = "top")
+
 gg1
 
+ggsave(
+  "./assets/rsi/nvda_returns_from_rsi.jpg", gg1,
+  width = 16, height = 9
+)
 
-# RSI vs Bollinger Band We see that the rather than buy&holding the stock,
+
+# *** RSI VS BOLLINGER BAND *** -----------------------------------------------
+# We see that the rather than buy&holding the stock,
 # trading made a better outcome. Now, let’s compare the performance with the
 # Bollinger Band strategy.
 
-AAPL$BBands <- BBands(Cl(AAPL), n = 20, sd = 2)
+NVDA$BBands <- BBands(Cl(NVDA), n = 20, sd = 2)
 
 # * Add trade signal
 # If the close prices is below the band, it's a buy signal
-AAPL$signal_b <- ifelse(Cl(AAPL) < AAPL$dn, 1,
-  ifelse(Cl(AAPL) > AAPL$up, -1, 0)
+NVDA$signal_b <- ifelse(Cl(NVDA) < NVDA$dn, 1,
+  ifelse(Cl(NVDA) > NVDA$up, -1, 0)
 ) # If the close prices is above the band, it's a sell signal
 
 # Create trade signal using bollingerband strategy
-trade_b <- ifelse(AAPL$signal == 1, "buy",
-  ifelse(AAPL$signal == -1, "sell", "")
+trade_b <- ifelse(NVDA$signal == 1, "buy",
+  ifelse(NVDA$signal == -1, "sell", "")
 )
 
 # Create new dataframe for trading strategy
 df_b <- data.frame(
-  Date = index(AAPL), Close = Cl(AAPL),
-  BBands_dn = AAPL$dn, BBands_up = AAPL$up, Trade = trade_b
+  Date = index(NVDA), Close = Cl(NVDA),
+  BBands_dn = NVDA$dn, BBands_up = NVDA$up, Trade = trade_b
 )
 # Change the column names
 colnames(df_b) <- c("Date", "Close", "BBands_dn", "BBands_up", "Trade")
@@ -338,7 +354,7 @@ gg_bband1 <- ggplot(df_b, aes(x = Date, y = Close)) +
   scale_color_manual(
     name = "Trade", values = c("buy" = "grey30", "sell" = "orangered")
   ) +
-  labs(title = "Bollinger Band Signal (AAPL)", y = "Price", x = "Date") +
+  labs(title = "Bollinger Band Signal (NVDA)", y = "Price", x = "Date") +
   theme_light() +
   theme(legend.position = "top") +
   scale_x_date(
@@ -346,9 +362,14 @@ gg_bband1 <- ggplot(df_b, aes(x = Date, y = Close)) +
     date_labels = "%Y-%m"
   )
 
-library(patchwork)
-gg_bband1 + gg_rsi1 + plot_layout(ncol = 1)
 
+nvda_bollinger_band_rsi <- gg_bband1 + gg_rsi1 + plot_layout(ncol = 1)
+nvda_bollinger_band_rsi
+
+ggsave(
+  "./assets/rsi/nvda_bollinger_band_rsi.jpg", nvda_bollinger_band_rsi,
+  width = 16, height = 9
+)
 
 # Identify the first trade relevant indices
 first_buy_index <- which(df_b$Trade == "buy")[1]
@@ -462,7 +483,7 @@ gg2 <- ggplot(returns_df, aes(
 )) +
   geom_bar(stat = "identity", color = "black") +
   labs(
-    title = "Returns from Bollinger Band Trading Strategy for AAPL",
+    title = "Returns from Bollinger Band Trading Strategy for NVDA",
     y = "Return", x = "Trade"
   ) +
   scale_y_continuous(labels = scales::percent) +
@@ -474,7 +495,13 @@ gg2 <- ggplot(returns_df, aes(
   theme(legend.position = "top")
 
 
-gg2 + gg1 + patchwork::plot_layout(ncol = 1)
+nvda_returns_bollinger_band_rsi <- gg2 + gg1 + patchwork::plot_layout(ncol = 1)
+
+ggsave(
+  "./assets/rsi/nvda_returns_bollinger_band_rsi.jpg",
+  nvda_returns_bollinger_band_rsi,
+  width = 16, height = 9
+)
 
 
 # Make a dataframe to plot the return graph
@@ -489,10 +516,10 @@ returns_df$Trade <- factor(returns_df$Trade, levels = trade_order)
 
 returns_df
 
-
-ggplot(returns_df, aes(x = Trade, y = Return, fill = Trade)) +
+rsi_trading
+nvda_trading_strategy_return <- ggplot(returns_df, aes(x = Trade, y = Return, fill = Trade)) +
   geom_bar(stat = "identity", color = "black", width = 0.5) +
-  labs(title = "Trading Strategy Return (AAPL)", y = "Return", x = "Trade") +
+  labs(title = "Trading Strategy Return (NVDA)", y = "Return", x = "Trade") +
   scale_y_continuous(labels = scales::percent) +
   geom_text(aes(label = scales::percent(Return)), vjust = -0.2, size = 4) +
   scale_fill_manual(values = c(
@@ -502,3 +529,9 @@ ggplot(returns_df, aes(x = Trade, y = Return, fill = Trade)) +
   )) +
   theme_light() +
   theme(legend.position = "top")
+
+ggsave(
+  "./assets/rsi/nvda_trading_strategy_return.jpg",
+  nvda_trading_strategy_return,
+  width = 16, height = 9
+)

@@ -57,7 +57,7 @@ na.omit(quantmod::getSymbols(
     "ADBE", "NFLX", "WMT", "KO", "BAC"
   ),
   src = "yahoo",
-  from = Sys.Date() - 3652, # 3652days = 10years
+  from = Sys.Date() - 1095, # 1095days = 3years
   to = Sys.Date()
 ))
 
@@ -292,7 +292,7 @@ benchmark_adjusted_summary <- summarize(benchmark_adjusted)
 
 # *** VISUALIZATION *** -------------------------------------------------------
 
-ggplot(portfolio_adjusted, aes(
+aapl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
   x = Date, y = AAPL.Adjusted
 )) +
   geom_area_pattern(
@@ -324,7 +324,7 @@ ggplot(portfolio_adjusted, aes(
   )
 
 # Save the plot
-ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", appl_adjusted_plot,
+ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", aapl_adjusted_plot,
   width = 16, height = 9
 )
 
