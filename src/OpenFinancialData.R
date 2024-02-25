@@ -21,7 +21,7 @@
 # conflicted    Handling conflicts between functions in R packages
 
 # * Install and load packages
-source("install_packages.R")
+source("./src/install_packages.R")
 
 
 # *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
