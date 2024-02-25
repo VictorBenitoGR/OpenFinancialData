@@ -1,0 +1,35 @@
+Package: OpenFinancialData
+Type: Package
+Title: OpenFinancialData
+Version: 0.0.1
+Authors@R: c(
+  person(given=c("Victor","B."), family="Garcia Rocha", role=c("aut", "cre"), email="victorbenitogr@gmail.com"),
+  )
+Description: This package is a collection of functions to download and visualize financial data from different sources. It is intended to be used as a practical tool for financial analysis and research.
+Depends: R (>= 3.2.0)
+Imports:
+  quantmod,
+  TTR,
+  highcharter,
+  ggplot2,
+  zoo,
+  dplyr,
+  DT,
+  patchwork,
+  fredr,
+  rdrop2,
+  rvest,
+  openxlsx,
+  siebanxicor,
+  lubridate,
+  xts,
+  tibble,
+  tidyverse,
+  ggpattern,
+  hrbrthemes
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+URL: https://github.com/VictorBenitoGR/OpenFinancialData
+Copyright: (c) 2023-2024
+LazyData: true

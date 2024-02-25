@@ -3,43 +3,25 @@
 
 # *** PACKAGES *** ------------------------------------------------------------
 
-# Function to install and load packages
-repository_packages <- function(libraries) {
-  for (library_name in libraries) {
-    if (!require(library_name, character.only = TRUE)) {
-      install.packages(library_name)
-    }
-    library(library_name, character.only = TRUE)
-  }
-}
+# ? Packages used in this script:
+# quantmod      Quantitative financial modeling and trading framework
+# fredr         Access to Federal Reserve Economic Data (FRED) API
+# TTR           Technical Trading Rules
+# rdrop2        Dropbox interface for R
+# rvest         Web scraping and parsing HTML/XML
+# openxlsx      Reading, writing, and editing Excel files
+# siebanxicor   Interface for the Siebanxicor API
+# lubridate     Working with dates and times
+# xts           Uniform handling of different time-based data classes
+# tibble        Simple data frames
+# tidyverse     Data manipulation and visualization packages
+# ggplot2       Data visualization
+# ggpattern     Geoms for patterned filled geoms
+# hrbrthemes    Opinionated, typographic-centric ggplot2 themes
+# conflicted    Handling conflicts between functions in R packages
 
-# List of packages
-libraries <- c(
-  "quantmod", # Quantitative financial modeling and trading framework
-  "fredr", # Access to Federal Reserve Economic Data (FRED) API
-  "TTR", # Technical Trading Rules
-  "rdrop2", # Dropbox interface for R
-  "rvest", # Web scraping and parsing HTML/XML
-  "openxlsx", # Reading, writing, and editing Excel files
-  "siebanxicor", # Interface for the Siebanxicor API
-  "lubridate", # Working with dates and times
-  "xts", # Uniform handling of different time-based data classes
-  "tibble", # Simple data frames
-  "tidyverse", # Data manipulation and visualization packages
-  "ggplot2", # Plotting system for R
-  "ggpattern", # Geoms for patterned filled geoms
-  "hrbrthemes" # Opinionated, typographic-centric ggplot2 themes
-)
-
-library(conflicted) # Handling conflicts between functions in R packages:
-conflict_prefer("filter", "dplyr")
-conflict_prefer("first", "dplyr")
-conflict_prefer("guess_encoding", "readr")
-conflict_prefer("lag", "dplyr")
-conflict_prefer("last", "dplyr")
-
-# Install and load packages
-repository_packages(libraries) # Load packages and install if necessary
+# * Install and load packages
+source("install_packages.R")
 
 
 # *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
@@ -417,12 +399,16 @@ export_to_excel <- function(file, sheet_names, dataframes) {
 }
 
 # Usage example
-export_to_excel("./data/stock_prices.xlsx", c(
-  "portfolio_open", "portfolio_high", "portfolio_low", "portfolio_close",
-  "portfolio_volume", "portfolio_adjusted", "benchmark_open", "benchmark_high",
-  "benchmark_low", "benchmark_close", "benchmark_volume", "benchmark_adjusted"
-), list(
-  portfolio_open, portfolio_high, portfolio_low, portfolio_close,
-  portfolio_volume, portfolio_adjusted, benchmark_open, benchmark_high,
-  benchmark_low, benchmark_close, benchmark_volume, benchmark_adjusted
-))
+export_to_excel(
+  "./data/stock_prices.xlsx", c(
+    "portfolio_open", "portfolio_high", "portfolio_low",
+    "portfolio_close", "portfolio_volume", "portfolio_adjusted",
+    "benchmark_open", "benchmark_high", "benchmark_low",
+    "benchmark_close", "benchmark_volume", "benchmark_adjusted"
+  ), list(
+    portfolio_open, portfolio_high, portfolio_low,
+    portfolio_close, portfolio_volume, portfolio_adjusted,
+    benchmark_open, benchmark_high, benchmark_low,
+    benchmark_close, benchmark_volume, benchmark_adjusted
+  )
+)

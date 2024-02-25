@@ -3,30 +3,19 @@
 
 # *** PACKAGES *** ------------------------------------------------------------
 
-# Function to install and load packages
-repository_packages <- function(libraries) {
-  for (library_name in libraries) {
-    if (!require(library_name, character.only = TRUE)) {
-      install.packages(library_name)
-    }
-    library(library_name, character.only = TRUE)
-  }
-}
+# ? Packages used in this script:
+# quantmod      Quantitative financial modeling and trading framework
+# TTR           Technical Trading Rules
+# highcharter   R wrapper for Highcharts
+# ggplot2       Data visualization
+# zoo           S3 Infrastructure for Regular and Irregular Time Series
+# dplyr         A Grammar of Data Manipulation
+# DT            A Wrapper of the JavaScript Library "DataTables"
+# patchwork     Combine separate ggplots into the same graphic
 
-# List of packages
-libraries <- c(
-  "quantmod", # Quantitative financial modeling and trading framework
-  "TTR", # Technical Trading Rules
-  "highcharter", # R wrapper for Highcharts
-  "ggplot2", # Data visualization
-  "zoo", # S3 Infrastructure for Regular and Irregular Time Series
-  "dplyr", # A Grammar of Data Manipulation
-  "DT", # A Wrapper of the JavaScript Library "DataTables"
-  "patchwork" # Combine separate ggplots into the same graphic
-)
+# * Install and load packages
+source("install_packages.R")
 
-# Install and load packages
-repository_packages(libraries) # Load packages and install if necessary
 
 # *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
 
@@ -517,7 +506,9 @@ returns_df$Trade <- factor(returns_df$Trade, levels = trade_order)
 returns_df
 
 rsi_trading
-nvda_trading_strategy_return <- ggplot(returns_df, aes(x = Trade, y = Return, fill = Trade)) +
+nvda_trading_strategy_return <- ggplot(returns_df, aes(
+  x = Trade, y = Return, fill = Trade
+)) +
   geom_bar(stat = "identity", color = "black", width = 0.5) +
   labs(title = "Trading Strategy Return (NVDA)", y = "Return", x = "Trade") +
   scale_y_continuous(labels = scales::percent) +
