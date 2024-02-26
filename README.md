@@ -1,5 +1,5 @@
 # OpenFinancialData
-Analyze, predict and improve the financial performance of the global economy. Provides two modules, **VEGA** (**V**isualization and **E**valuation of **G**lobal **A**ccounting) and **SOLARIS** (**S**ecurities **O**ptimization and **L**ong-term **A**nalysis for **R**eturns on **I**nvestment **S**trategies).
+Transparency, analysis, forecasting, visualization and improvement of the financial performance of the global economy. Provides two modules, **VEGA** (**V**isualization and **E**valuation of **G**lobal **A**ccounting) and **SOLARIS** (**S**ecurities **O**ptimization and **L**ong-term **A**nalysis of **R**isk on **I**nvestment **S**trategies).
 
 
 ## Background
@@ -33,7 +33,7 @@ Calculate current and forecasted **Accounting Ratios**, such as the **Activity**
 ## SOLARIS (Securities Optimization and Long-Term Analysis of Risk on Investment Strategies)
 This module seeks to automate the analysis of financial portfolios and asset investments (with their respective depreciation/amortization impact).
 
-Its ultimate goal is to simplify the insertion of any company to corporate investment, condensing in a personalized way its tax implications. 
+Its ultimate goal is to simplify the insertion of any company to corporate investment, customizing the condensation of their tax implications.
 
 
 ### Benchmark Analysis
