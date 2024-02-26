@@ -5,6 +5,7 @@ Transparency, analysis, forecasting, visualization and improvement of the financ
 ## Background
 I started this project during my university career at Tecnologico de Monterrey (ITESM), which has agreements with several companies for students to develop projects that address specific problems they have, like L'Oréal Mexico and MSCI USA.
 
+![L'Oréal and MSCI](./assets/README/loreal_and_msci_itesm.png "L'Oréal and MSCI")
 
 ## VEGA (Visualization and Evaluation of Global Accounting)
 This module seeks to automate financial statement analysis, allowing to visualize the evolution of public companies listed on the SEC (US, through the EDGAR system) and BMV/BIVA (Mexico, DataBursatil API). 
