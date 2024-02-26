@@ -3,7 +3,7 @@ Transparency, analysis, forecasting, visualization and improvement of the financ
 
 
 ## Background
-I started this project during my university career at Tecnologico de Monterrey (ITESM), which has agreements with several companies for students to develop projects that address specific problems they have, like L'Oréal Mexico and MSCI USA.
+I started this project during my university career at Tecnologico de Monterrey (ITESM), which has direct agreements with several companies for students to develop projects that address specific problems they have, like L'Oréal Mexico and MSCI USA.
 
 ![L'Oréal and MSCI](./assets/README/loreal_and_msci_itesm.png "L'Oréal and MSCI")
 
