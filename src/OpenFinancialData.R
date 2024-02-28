@@ -246,7 +246,7 @@ portfolio_low_summary <- summarize(portfolio_low)
 portfolio_close_summary <- summarize(portfolio_close)
 portfolio_volume_summary <- summarize(portfolio_volume)
 portfolio_adjusted_summary <- summarize(portfolio_adjusted)
-
+View(portfolio_adjusted_summary)
 # Benchmark summary
 benchmark_open_summary <- summarize(benchmark_open)
 benchmark_high_summary <- summarize(benchmark_high)

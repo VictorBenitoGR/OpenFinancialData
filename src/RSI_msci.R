@@ -21,16 +21,16 @@ source("./src/install_packages.R")
 
 # * Start here
 # Specify the ticker symbol and the source
-symbol <- "AAPL"
+symbol <- "MSCI"
 
 # Import the historical stock prices
-aapl <- getSymbols(
+msci <- getSymbols(
   symbol,
   src = "yahoo",
   from = Sys.Date() - 1095, # 1095days = 3years
   to = Sys.Date()
 )
-
+head(prices)
 # ? Open (O): The price of the asset at the beginning of the trading period.
 # ? High (H): The highest price reached by the asset.
 # ? Low (L): The lowest price reached by the asset.
@@ -52,12 +52,12 @@ prices <- Ad(get(symbol))
 rsi <- RSI(prices)
 
 # Use highcharter for visualization
-hc1 <- hchart(AAPL) %>%
-  hc_title(text = "Daily Stock Price of AAPL (2021 - 2024)") %>%
+hc1 <- hchart(MSCI) %>%
+  hc_title(text = "Daily Stock Price of MSCI (2021 - 2024)") %>%
   hc_xAxis(type = "datetime") %>%
   hc_yAxis(title = list(text = "Price"))
 hc2 <- hchart(rsi) %>%
-  hc_title(text = "RSI of AAPL (2021 - 2024)") %>%
+  hc_title(text = "RSI of MSCI (2021 - 2024)") %>%
   hc_xAxis(type = "datetime") %>%
   hc_yAxis(title = list(text = "RSI"))
 
@@ -71,7 +71,7 @@ grid
 rsi_df <- data.frame(
   date = index(rsi),
   rsi = coredata(rsi),
-  adjusted = as.numeric(AAPL$AAPL.Adjusted)
+  adjusted = as.numeric(MSCI$MSCI.Adjusted)
 )
 datatable(rsi_df)
 
@@ -115,8 +115,8 @@ gg2 <- ggplot(rsi_df, aes(x = date, y = adjusted)) +
   theme_light()
 
 # Helps plot two graphs in one grid for ggplot2 objects
-aapl_adjusted_rsi <- gg2 + gg1 + plot_layout(ncol = 1)
-ggsave("./assets/AAPL/aapl_adjusted_rsi.jpg", aapl_adjusted_rsi,
+msci_adjusted_rsi <- gg2 + gg1 + plot_layout(ncol = 1)
+ggsave("./assets/MSCI/msci_adjusted_rsi.jpg", msci_adjusted_rsi,
   width = 16, height = 9
 )
 a
@@ -228,7 +228,7 @@ gg_rsi1 <- ggplot(nf, aes(x = Date, y = Adjusted)) +
     values = c("buy" = "grey30", "sell" = "orangered")
   ) +
   labs(x = "Date", y = "Price", color = "Signal") +
-  ggtitle("RSI Trading Signal (AAPL)") +
+  ggtitle("RSI Trading Signal (MSCI)") +
   scale_x_date(
     date_breaks = "2 months",
     date_labels = "%Y-%m"
@@ -239,7 +239,7 @@ gg_rsi1 <- ggplot(nf, aes(x = Date, y = Adjusted)) +
 gg_rsi1
 
 ggsave(
-  "./assets/AAPL/aapl_rsi_trading_signal.jpg", gg_rsi1,
+  "./assets/MSCI/msci_rsi_trading_signal.jpg", gg_rsi1,
   width = 16, height = 9
 )
 
@@ -279,7 +279,7 @@ gg1 <- ggplot(returns_df, aes(
 )) +
   geom_bar(stat = "identity", color = "black", width = 0.5) +
   labs(
-    title = "Returns from RSI Trading Strategy for AAPL",
+    title = "Returns from RSI Trading Strategy for MSCI",
     y = "Return",
     x = "Trade"
   ) +
@@ -294,7 +294,7 @@ gg1 <- ggplot(returns_df, aes(
 gg1
 
 ggsave(
-  "./assets/AAPL/aapl_returns_from_rsi.jpg", gg1,
+  "./assets/MSCI/msci_returns_from_rsi.jpg", gg1,
   width = 16, height = 9
 )
 
@@ -304,23 +304,23 @@ ggsave(
 # trading made a better outcome. Now, let’s compare the performance with the
 # Bollinger Band strategy.
 
-AAPL$BBands <- BBands(Ad(AAPL), n = 20, sd = 2)
+MSCI$BBands <- BBands(Ad(MSCI), n = 20, sd = 2)
 
 # * Add trade signal
 # If the adjusted prices is below the band, it's a buy signal
-AAPL$signal_b <- ifelse(Ad(AAPL) < AAPL$dn, 1,
-  ifelse(Ad(AAPL) > AAPL$up, -1, 0)
+MSCI$signal_b <- ifelse(Ad(MSCI) < MSCI$dn, 1,
+  ifelse(Ad(MSCI) > MSCI$up, -1, 0)
 ) # If the adjusted prices is above the band, it's a sell signal
 
 # Create trade signal using bollingerband strategy
-trade_b <- ifelse(AAPL$signal == 1, "buy",
-  ifelse(AAPL$signal == -1, "sell", "")
+trade_b <- ifelse(MSCI$signal == 1, "buy",
+  ifelse(MSCI$signal == -1, "sell", "")
 )
 
 # Create new dataframe for trading strategy
 df_b <- data.frame(
-  Date = index(AAPL), Adjusted = Ad(AAPL),
-  BBands_dn = AAPL$dn, BBands_up = AAPL$up, Trade = trade_b
+  Date = index(MSCI), Adjusted = Ad(MSCI),
+  BBands_dn = MSCI$dn, BBands_up = MSCI$up, Trade = trade_b
 )
 # Change the column names
 colnames(df_b) <- c("Date", "Adjusted", "BBands_dn", "BBands_up", "Trade")
@@ -343,7 +343,7 @@ gg_bband1 <- ggplot(df_b, aes(x = Date, y = Adjusted)) +
   scale_color_manual(
     name = "Trade", values = c("buy" = "grey30", "sell" = "orangered")
   ) +
-  labs(title = "Bollinger Band Signal (AAPL)", y = "Price", x = "Date") +
+  labs(title = "Bollinger Band Signal (MSCI)", y = "Price", x = "Date") +
   theme_light() +
   theme(legend.position = "top") +
   scale_x_date(
@@ -352,11 +352,11 @@ gg_bband1 <- ggplot(df_b, aes(x = Date, y = Adjusted)) +
   )
 
 
-aapl_bollinger_band_rsi <- gg_bband1 + gg_rsi1 + plot_layout(ncol = 1)
-aapl_bollinger_band_rsi
+msci_bollinger_band_rsi <- gg_bband1 + gg_rsi1 + plot_layout(ncol = 1)
+msci_bollinger_band_rsi
 
 ggsave(
-  "./assets/AAPL/aapl_bollinger_band_rsi.jpg", aapl_bollinger_band_rsi,
+  "./assets/MSCI/msci_bollinger_band_rsi.jpg", msci_bollinger_band_rsi,
   width = 16, height = 9
 )
 
@@ -472,7 +472,7 @@ gg2 <- ggplot(returns_df, aes(
 )) +
   geom_bar(stat = "identity", color = "black") +
   labs(
-    title = "Returns from Bollinger Band Trading Strategy for AAPL",
+    title = "Returns from Bollinger Band Trading Strategy for MSCI",
     y = "Return", x = "Trade"
   ) +
   scale_y_continuous(labels = scales::percent) +
@@ -484,11 +484,11 @@ gg2 <- ggplot(returns_df, aes(
   theme(legend.position = "top")
 
 
-aapl_returns_bollinger_band_rsi <- gg2 + gg1 + patchwork::plot_layout(ncol = 1)
+msci_returns_bollinger_band_rsi <- gg2 + gg1 + patchwork::plot_layout(ncol = 1)
 
 ggsave(
-  "./assets/AAPL/aapl_returns_bollinger_band_rsi.jpg",
-  aapl_returns_bollinger_band_rsi,
+  "./assets/MSCI/msci_returns_bollinger_band_rsi.jpg",
+  msci_returns_bollinger_band_rsi,
   width = 16, height = 9
 )
 
@@ -506,11 +506,11 @@ returns_df$Trade <- factor(returns_df$Trade, levels = trade_order)
 returns_df
 
 rsi_trading
-aapl_trading_strategy_return <- ggplot(returns_df, aes(
+msci_trading_strategy_return <- ggplot(returns_df, aes(
   x = Trade, y = Return, fill = Trade
 )) +
   geom_bar(stat = "identity", color = "black", width = 0.5) +
-  labs(title = "Trading Strategy Return (AAPL)", y = "Return", x = "Trade") +
+  labs(title = "Trading Strategy Return (MSCI)", y = "Return", x = "Trade") +
   scale_y_continuous(labels = scales::percent) +
   geom_text(aes(label = scales::percent(Return)), vjust = -0.2, size = 4) +
   scale_fill_manual(values = c(
@@ -522,7 +522,7 @@ aapl_trading_strategy_return <- ggplot(returns_df, aes(
   theme(legend.position = "top")
 
 ggsave(
-  "./assets/AAPL/aapl_trading_strategy_return.jpg",
-  aapl_trading_strategy_return,
+  "./assets/MSCI/msci_trading_strategy_return.jpg",
+  msci_trading_strategy_return,
   width = 16, height = 9
 )

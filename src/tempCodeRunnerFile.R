@@ -42,8 +42,8 @@ aapl <- getSymbols(
 
 # *** SPLIT BY TYPES *** ------------------------------------------------------
 
-# Extract the adjusted prices
-prices <- Ad(get(symbol))
+# Extract the adjusted close prices
+prices <- Cl(get(symbol))
 
 
 # ***  RSI | INTERACTIVE *** --------------------------------------------------
@@ -67,11 +67,11 @@ grid
 
 # *** RSI PLOTS *** -----------------------------------------------------------
 
-# dataframe for RSI and Adjusted price
+# dataframe for RSI and Close price
 rsi_df <- data.frame(
   date = index(rsi),
   rsi = coredata(rsi),
-  adjusted = as.numeric(AAPL$AAPL.Adjusted)
+  close = as.numeric(AAPL$AAPL.Close)
 )
 datatable(rsi_df)
 
@@ -95,7 +95,7 @@ gg1 <- ggplot(rsi_df, aes(x = date, y = rsi)) +
   theme_light()
 
 # Plot the stock price with shaded areas
-gg2 <- ggplot(rsi_df, aes(x = date, y = adjusted)) +
+gg2 <- ggplot(rsi_df, aes(x = date, y = close)) +
   geom_line(linewidth = 1, color = "cornflowerblue") +
   geom_rect(aes(
     xmin = date, xmax = lead(date),
@@ -106,8 +106,8 @@ gg2 <- ggplot(rsi_df, aes(x = date, y = adjusted)) +
     ymin = -Inf, ymax = ifelse(rsi > 70, Inf, NA)
   ), fill = "red", alpha = 0.2) +
   labs(title = paste(
-    "Adjusted Price for", symbol
-  ), x = "Date", y = "Adjusted Price") +
+    "Close Price for", symbol
+  ), x = "Date", y = "Close Price") +
   scale_x_date(
     date_breaks = "2 months",
     date_labels = "%Y-%m"
@@ -115,8 +115,8 @@ gg2 <- ggplot(rsi_df, aes(x = date, y = adjusted)) +
   theme_light()
 
 # Helps plot two graphs in one grid for ggplot2 objects
-aapl_adjusted_rsi <- gg2 + gg1 + plot_layout(ncol = 1)
-ggsave("./assets/AAPL/aapl_adjusted_rsi.jpg", aapl_adjusted_rsi,
+aapl_close_rsi <- gg2 + gg1 + plot_layout(ncol = 1)
+ggsave("./assets/rsi/aapl_close_rsi.jpg", aapl_close_rsi,
   width = 16, height = 9
 )
 a
@@ -191,8 +191,8 @@ buy_signals
 # Sell Signal Index
 sell_signals
 ## [1]  62 285
-# Create data frame with Date and Adjusted Price columns
-nf <- data.frame(Date = index(rsi), Adjusted = rsi_df$adjusted)
+# Create data frame with Date and Close Price columns
+nf <- data.frame(Date = index(rsi), Close = rsi_df$close)
 
 # Add Trade column and initialize to "none"
 nf$Trade <- rep(NA, nrow(nf))
@@ -216,7 +216,7 @@ datatable(nf_omit)
 # Filter out NA trades
 trades <- na.omit(nf)
 # Plot RSI and trades
-gg_rsi1 <- ggplot(nf, aes(x = Date, y = Adjusted)) +
+gg_rsi1 <- ggplot(nf, aes(x = Date, y = Close)) +
   geom_line(size = 0.8, color = "cornflowerblue") +
   geom_point(
     data = trades[trades$Trade == "buy", ], aes(color = "buy"), size = 4
@@ -239,7 +239,7 @@ gg_rsi1 <- ggplot(nf, aes(x = Date, y = Adjusted)) +
 gg_rsi1
 
 ggsave(
-  "./assets/AAPL/aapl_rsi_trading_signal.jpg", gg_rsi1,
+  "./assets/rsi/aapl_rsi_trading_signal.jpg", gg_rsi1,
   width = 16, height = 9
 )
 
@@ -250,13 +250,13 @@ ggsave(
 trades <- na.omit(nf)
 
 # For first trade
-buy_price <- trades$Adjusted[1]
-sell_price <- trades$Adjusted[2]
+buy_price <- trades$Close[1]
+sell_price <- trades$Close[2]
 returns1 <- (sell_price - buy_price) / buy_price
 
 # For second trade
-buy_prices <- c(trades$Adjusted[3], trades$Adjusted[4])
-sell_price <- trades$Adjusted[5]
+buy_prices <- c(trades$Close[3], trades$Close[4])
+sell_price <- trades$Close[5]
 returns2 <- (sell_price - mean(buy_prices)) / mean(buy_prices)
 
 
@@ -264,7 +264,7 @@ returns2 <- (sell_price - mean(buy_prices)) / mean(buy_prices)
 trading_return <- (1 + returns1) * (1 + returns2) - 1
 
 # Buy&Hold
-buy_hold_return <- (nf[301, "Adjusted"] - nf[1, "Adjusted"]) / nf[1, "Adjusted"]
+buy_hold_return <- (nf[301, "Close"] - nf[1, "Close"]) / nf[1, "Close"]
 # Make a dataframe to plot the return graph
 returns_df <- data.frame(
   Trade = c("1st Trade", "2nd Trade", "RSI Trading Profit", "Buy&Hold"),
@@ -294,7 +294,7 @@ gg1 <- ggplot(returns_df, aes(
 gg1
 
 ggsave(
-  "./assets/AAPL/aapl_returns_from_rsi.jpg", gg1,
+  "./assets/rsi/aapl_returns_from_rsi.jpg", gg1,
   width = 16, height = 9
 )
 
@@ -304,13 +304,13 @@ ggsave(
 # trading made a better outcome. Now, let’s compare the performance with the
 # Bollinger Band strategy.
 
-AAPL$BBands <- BBands(Ad(AAPL), n = 20, sd = 2)
+AAPL$BBands <- BBands(Cl(AAPL), n = 20, sd = 2)
 
 # * Add trade signal
-# If the adjusted prices is below the band, it's a buy signal
-AAPL$signal_b <- ifelse(Ad(AAPL) < AAPL$dn, 1,
-  ifelse(Ad(AAPL) > AAPL$up, -1, 0)
-) # If the adjusted prices is above the band, it's a sell signal
+# If the close prices is below the band, it's a buy signal
+AAPL$signal_b <- ifelse(Cl(AAPL) < AAPL$dn, 1,
+  ifelse(Cl(AAPL) > AAPL$up, -1, 0)
+) # If the close prices is above the band, it's a sell signal
 
 # Create trade signal using bollingerband strategy
 trade_b <- ifelse(AAPL$signal == 1, "buy",
@@ -319,26 +319,26 @@ trade_b <- ifelse(AAPL$signal == 1, "buy",
 
 # Create new dataframe for trading strategy
 df_b <- data.frame(
-  Date = index(AAPL), Adjusted = Ad(AAPL),
+  Date = index(AAPL), Close = Cl(AAPL),
   BBands_dn = AAPL$dn, BBands_up = AAPL$up, Trade = trade_b
 )
 # Change the column names
-colnames(df_b) <- c("Date", "Adjusted", "BBands_dn", "BBands_up", "Trade")
+colnames(df_b) <- c("Date", "Close", "BBands_dn", "BBands_up", "Trade")
 
 datatable(df_b)
 
 
 # Visualize
-gg_bband1 <- ggplot(df_b, aes(x = Date, y = Adjusted)) +
+gg_bband1 <- ggplot(df_b, aes(x = Date, y = Close)) +
   geom_line(size = 0.8, color = "steelblue") +
   geom_ribbon(aes(
     ymin = BBands_dn, ymax = BBands_up
   ), alpha = 0.2, fill = "black") +
   geom_point(data = df_b[df_b$Trade == "buy", ], aes(
-    x = Date, y = Adjusted, color = "buy"
+    x = Date, y = Close, color = "buy"
   ), size = 3) +
   geom_point(data = df_b[df_b$Trade == "sell", ], aes(
-    x = Date, y = Adjusted, color = "sell"
+    x = Date, y = Close, color = "sell"
   ), size = 3) +
   scale_color_manual(
     name = "Trade", values = c("buy" = "grey30", "sell" = "orangered")
@@ -356,7 +356,7 @@ aapl_bollinger_band_rsi <- gg_bband1 + gg_rsi1 + plot_layout(ncol = 1)
 aapl_bollinger_band_rsi
 
 ggsave(
-  "./assets/AAPL/aapl_bollinger_band_rsi.jpg", aapl_bollinger_band_rsi,
+  "./assets/rsi/aapl_bollinger_band_rsi.jpg", aapl_bollinger_band_rsi,
   width = 16, height = 9
 )
 
@@ -393,10 +393,10 @@ fourth_sell_index <- which(
 if (!is.na(first_buy_index) && !is.na(first_sell_index)) {
   buy_prices_1 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) <= index(df_b)[first_sell_index]
-  ), "Adjusted"]
+  ), "Close"]
   buy_avg_price_1 <- mean(buy_prices_1, na.rm = TRUE)
 
-  sell_price_1 <- df_b[first_sell_index, "Adjusted"]
+  sell_price_1 <- df_b[first_sell_index, "Close"]
   return_1 <- (sell_price_1 - buy_avg_price_1) / buy_avg_price_1
 } else {
   return_1 <- NA
@@ -407,10 +407,10 @@ if (!is.na(second_buy_index) && !is.na(second_sell_index)) {
   buy_prices_2 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) > index(df_b)[first_sell_index] &
       index(df_b) < index(df_b)[second_sell_index]
-  ), "Adjusted"]
+  ), "Close"]
   buy_avg_price_2 <- mean(buy_prices_2, na.rm = TRUE)
 
-  sell_price_2 <- df_b[second_sell_index, "Adjusted"]
+  sell_price_2 <- df_b[second_sell_index, "Close"]
   return_2 <- (sell_price_2 - buy_avg_price_2) / buy_avg_price_2
 } else {
   return_2 <- NA
@@ -421,10 +421,10 @@ if (!is.na(third_buy_index) && !is.na(third_sell_index)) {
   buy_prices_3 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) > index(df_b)[second_sell_index] &
       index(df_b) < index(df_b)[third_sell_index]
-  ), "Adjusted"]
+  ), "Close"]
   buy_avg_price_3 <- mean(buy_prices_3, na.rm = TRUE)
 
-  sell_price_3 <- df_b[third_sell_index, "Adjusted"]
+  sell_price_3 <- df_b[third_sell_index, "Close"]
   return_3 <- (sell_price_3 - buy_avg_price_3) / buy_avg_price_3
 } else {
   return_3 <- NA
@@ -436,10 +436,10 @@ if (!is.na(fourth_buy_index) && !is.na(fourth_sell_index)) {
   buy_prices_4 <- df_b[which(
     df_b$Trade == "buy" & index(df_b) > index(df_b)[third_sell_index] &
       index(df_b) < index(df_b)[fourth_sell_index]
-  ), "Adjusted"]
+  ), "Close"]
   buy_avg_price_4 <- mean(buy_prices_4, na.rm = TRUE)
 
-  sell_price_4 <- df_b[fourth_sell_index, "Adjusted"]
+  sell_price_4 <- df_b[fourth_sell_index, "Close"]
   return_4 <- (sell_price_4 - buy_avg_price_4) / buy_avg_price_4
 } else {
   return_4 <- NA
@@ -487,7 +487,7 @@ gg2 <- ggplot(returns_df, aes(
 aapl_returns_bollinger_band_rsi <- gg2 + gg1 + patchwork::plot_layout(ncol = 1)
 
 ggsave(
-  "./assets/AAPL/aapl_returns_bollinger_band_rsi.jpg",
+  "./assets/rsi/aapl_returns_bollinger_band_rsi.jpg",
   aapl_returns_bollinger_band_rsi,
   width = 16, height = 9
 )
@@ -522,7 +522,7 @@ aapl_trading_strategy_return <- ggplot(returns_df, aes(
   theme(legend.position = "top")
 
 ggsave(
-  "./assets/AAPL/aapl_trading_strategy_return.jpg",
+  "./assets/rsi/aapl_trading_strategy_return.jpg",
   aapl_trading_strategy_return,
   width = 16, height = 9
 )

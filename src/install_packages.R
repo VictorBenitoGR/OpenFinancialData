@@ -8,7 +8,6 @@ packages <- c(
   "quantmod", #       Quantitative financial modeling and trading framework
   "fredr", #          Access to Federal Reserve Economic Data (FRED) API
   "TTR", #            Technical Trading Rules
-  "rdrop2", #         Dropbox interface from R
   "rvest", #          Simple web scraping for R
   "openxlsx", #       Read, write and edit XLSX files
   "siebanxicor", #    Access to the Mexican Stock Exchange (BMV) API
