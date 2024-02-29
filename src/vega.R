@@ -150,7 +150,7 @@ portfolio_low <- do.call(cbind, portfolio_low)
 portfolio_close <- do.call(cbind, portfolio_close)
 portfolio_volume <- do.call(cbind, portfolio_volume)
 portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
-head(portfolio_adjusted)
+
 # * Benchmark
 # Use lapply to convert each xts object to a data frame
 benchmark_open <- lapply(benchmark_open, xts_to_df)
@@ -208,99 +208,103 @@ benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
 benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 
 
-# *** FUNCTION | SUMMARIZE DATA *** -------------------------------------------
+# *** FUNCTION | portfolio_metrics *** ----------------------------------------
 
-# Function to calculate summary statistics for a portfolio
-summarize <- function(df, benchmark_adjusted) {
+# Function to calculate general metrics for a portfolio
+portfolio_metrics <- function(df, benchmark_adjusted) {
   # Divide each row by the previous one and apply natural logarithm
-  library(dplyr)
+  # ? Uses dplyr
   df <- log(df / lag(df))
   benchmark_adjusted$EUSA.Adjusted <- log(
     benchmark_adjusted$EUSA.Adjusted /
-      lag(benchmark_adjusted$EUSA.Adjusted)
+      lag(benchmark_adjusted$EUSA.Adjusted) # ! Optimize
   )
 
   # Replace NA and Inf values with 0
   df[is.na(df) | df == Inf] <- 0
-  benchmark_adjusted$EUSA.Adjusted[
+  benchmark_adjusted$EUSA.Adjusted[ # ! Optimize
     is.na(
-      benchmark_adjusted$EUSA.Adjusted
+      benchmark_adjusted$EUSA.Adjusted # ! Optimize
     ) | benchmark_adjusted$ColumnName == Inf
   ] <- 0
 
+  # Calculate betas for each column in the data frame
   betas <- sapply(names(df), function(col) {
-    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
+    formula <- as.formula(paste(col, "~ EUSA.Adjusted")) # ! Optimize
     regression_result <- lm(formula, data = cbind(
       df,
-      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
+      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted # ! Optimize
     ))
     coef(regression_result)[2]
   })
+
+  # Calculate R-squared values for each column in the data frame
   r_squared <- sapply(names(df), function(col) {
-    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
+    formula <- as.formula(paste(col, "~ EUSA.Adjusted")) # ! Optimize
     regression_result <- lm(formula, data = cbind(
       df,
-      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
+      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted # ! Optimize
     ))
     summary(regression_result)$r.squared
   })
-  summary <- data.frame(
+
+  # Output
+  metrics <- data.frame(
     Average = colMeans(df, na.rm = TRUE) * 100,
     Variance = apply(df, 2, var, na.rm = TRUE) * 100,
     Std_Deviation = apply(df, 2, sd, na.rm = TRUE) * 100,
     Beta = betas,
     R_Squared = r_squared
   )
-  library(tibble)
+
+  # ? Uses tibble
   # Convert row names to a column named "Tickers"
-  summary <- rownames_to_column(summary, "Tickers")
-  return(summary)
+  metrics <- rownames_to_column(metrics, "Tickers")
+  return(metrics)
 }
 
-portfolio_adjusted_summary <- summarize(portfolio_adjusted, benchmark_adjusted)
+# ? Test
+portfolio_adjusted_metrics <- portfolio_metrics(
+  portfolio_adjusted, benchmark_adjusted
+)
 head(portfolio_adjusted)
-head(portfolio_adjusted_summary)
-View(portfolio_adjusted_summary)
-
+head(portfolio_adjusted_metrics)
+View(portfolio_adjusted_metrics)
 
 # abc <- portfolio_adjusted <- portfolio_adjusted[, -1]
 # abc <- abc / lag(abc)
 # View(portfolio_adjusted)
 
 
-# *** SUMMARIZE DATA *** ------------------------------------------------------
+# *** GET METRICS *** ------------------------------------------------------
+# ! Optimize
 
-# Portfolio summary
-portfolio_open_summary <- summarize(portfolio_open, benchmark_adjusted)
-portfolio_high_summary <- summarize(portfolio_high, benchmark_adjusted)
-portfolio_low_summary <- summarize(portfolio_low, benchmark_adjusted)
-portfolio_close_summary <- summarize(portfolio_close, benchmark_adjusted)
-portfolio_volume_summary <- summarize(portfolio_volume, benchmark_adjusted)
-portfolio_adjusted_summary <- summarize(portfolio_adjusted, benchmark_adjusted)
+# Portfolio metrics
+portfolio_open_metrics <- portfolio_metrics(
+  portfolio_open, benchmark_adjusted
+)
 
-# # Benchmark summary (maybe against SP500?)
-# benchmark_open_summary <- summarize(benchmark_open, benchmark_adjusted)
-# benchmark_high_summary <- summarize(benchmark_high, benchmark_adjusted)
-# benchmark_low_summary <- summarize(benchmark_low, benchmark_adjusted)
-# benchmark_close_summary <- summarize(benchmark_close, benchmark_adjusted)
-# benchmark_volume_summary <- summarize(benchmark_volume, benchmark_adjusted)
-# benchmark_adjusted_summary <- summarize(benchmark_adjusted, benchmark_adjusted) # nolint: line_length_linter.
+portfolio_high_metrics <- portfolio_metrics(
+  portfolio_high, benchmark_adjusted
+)
 
+portfolio_low_metrics <- portfolio_metrics(
+  portfolio_low, benchmark_adjusted
+)
 
-# *** FUNCTION | CALCULATE BETA AND R2 *** -------------------------------------
+portfolio_close_metrics <- portfolio_metrics(
+  portfolio_close, benchmark_adjusted
+)
 
-# # ? Test
-# benchmark_adjusted <- lapply(benchmark, adjusted_price)
-# benchmark_adjusted <- lapply(benchmark_adjusted, xts_to_df)
-# benchmark_adjusted <- do.call(cbind, benchmark_adjusted)
-# benchmark_adjusted_summary <- summarize(benchmark_adjusted)
+portfolio_volume_metrics <- portfolio_metrics(
+  portfolio_volume, benchmark_adjusted
+)
 
+portfolio_adjusted_metrics <- portfolio_metrics(
+  portfolio_adjusted, benchmark_adjusted
+)
 
-# # Get the Ln of benchmark_adjusted
-# benchmark_adjusted$Ln <- log(benchmark_adjusted$GSPC.Adjusted)
-# View(benchmark_adjusted)
-
-# View(portfolio_adjusted_summary)
+# # Benchmark metrics (maybe against SP500?)
 
 
 # *** VISUALIZATION *** -------------------------------------------------------
@@ -342,71 +346,6 @@ ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", aapl_adjusted_plot,
 )
 
 
-# !!! TESTS !!! ---------------------------------------------------------------
-# plot(Ad(AAPL))
-
-
-# chart_Series(AAPL,
-#   name = NULL,
-#   type = "candlesticks",
-#   subset = "",
-#   TA = "",
-#   pars = chart_pars(),
-#   theme = chart_theme(),
-#   clev = 0
-# )
-
-# # Get it
-# aapl <- list(AAPL)
-# # Use lapply to convert each xts object to a data frame
-# aapl <- lapply(aapl, xts_to_df)
-# # Combine the data frames into a single data frame
-# aapl <- do.call(cbind, aapl)
-# # You can't use the "first" column, use this from library(tibble)
-# aapl <- rownames_to_column(aapl, "Date")
-# # You need to give Date its proper format
-# aapl$Date <- as.Date(aapl$Date, format = "%Y-%m-%d")
-# View(aapl)
-
-# # "TTR Composite" (simulated data)
-# data(aapl)
-
-# # Bollinger Bands
-# bbands <- BBands(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
-
-# # Directional Movement Index
-# adx <- ADX(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
-
-# # Moving Averages
-# ema <- EMA(aapl[, "AAPL.Close"], n = 20)
-# sma <- SMA(aapl[, "AAPL.Close"], n = 20)
-
-# # MACD
-# macd <- MACD(aapl[, "AAPL.Close"])
-
-# # RSI
-# rsi <- RSI(aapl[, "AAPL.Close"])
-
-# # Stochastics
-# stoch <- stoch(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
-# # TTR works with the chartSeries() function in quantmod. Here's an example that
-# # uses chartSeries() and adds TTR-calculated indicators and overlays to the
-# # chart.
-
-# # "TTR Composite" (simulated data)
-# data(AAPL)
-
-# # Use quantmod's OHLCV extractor function to help create an xts object
-# xaapl <- xts(OHLCV(aapl), aapl[["Date"]])
-
-# chartSeries(xaapl, subset = "2019-02-22/", theme = "white")
-# addBBands()
-# addRSI()
-
-
-
-# ggsave("./aapl.jpg", xaapl, width = 16, height = 9)
-
 # *** EXPORT IF NECESSARY *** ------------------------------------------------
 
 # Function to export dataframes to an Excel file
@@ -432,11 +371,13 @@ export_to_excel <- function(file, sheet_names, dataframes) {
 # Usage example
 export_to_excel(
   "./data/stock_prices.xlsx", c(
+    "portfolio_adjusted_metrics",
     "portfolio_open", "portfolio_high", "portfolio_low",
     "portfolio_close", "portfolio_volume", "portfolio_adjusted",
     "benchmark_open", "benchmark_high", "benchmark_low",
     "benchmark_close", "benchmark_volume", "benchmark_adjusted"
   ), list(
+    portfolio_adjusted_metrics,
     portfolio_open, portfolio_high, portfolio_low,
     portfolio_close, portfolio_volume, portfolio_adjusted,
     benchmark_open, benchmark_high, benchmark_low,
