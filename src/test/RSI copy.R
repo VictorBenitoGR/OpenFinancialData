@@ -119,7 +119,7 @@ aapl_adjusted_rsi <- gg2 + gg1 + plot_layout(ncol = 1)
 ggsave("./assets/AAPL/aapl_adjusted_rsi.jpg", aapl_adjusted_rsi,
   width = 16, height = 9
 )
-a
+
 # The blue area shows where the RSI is less than 30 and the red area shows where
 # the RSI is over 60.
 
@@ -132,7 +132,7 @@ a
 # Finding indices for buying and selling
 # Define threshold values
 buy_threshold <- 30
-sell_threshold <- 60
+sell_threshold <- 70
 
 # Initialize variables
 position <- "short"

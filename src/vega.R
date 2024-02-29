@@ -30,7 +30,7 @@ source("./src/install_packages.R")
 # Obtain the ticker symbols
 na.omit(quantmod::getSymbols(
   c(
-    "^GSPC", "MSCI", # Benchmarks (SP500 and MSCI)
+    "EUSA", # Benchmarks (MSCI USA Equal Weighted ETF) # "^GSPC" SP500
     "AAPL", "MSFT", "NVDA", "AMZN", "META",
     "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
     "TMO", "JPM", "UNH", "V", "XOM",
@@ -44,7 +44,7 @@ na.omit(quantmod::getSymbols(
 ))
 
 # Benchmarks, necessary to get Beta and R2
-benchmark <- list(GSPC, MSCI)
+benchmark <- list(EUSA)
 
 # Actual tickers of the portfolio
 list_of_tickers <- list(
@@ -131,11 +131,6 @@ xts_to_df <- function(xts_object) {
   return(df)
 }
 
-# * Function to convert previous xts lists to data frames
-xts_to_df <- function(xts_object) {
-  df <- as.data.frame(xts_object)
-  return(df)
-
 
 # *** XTS TO DF *** -----------------------------------------------------------
 
@@ -155,7 +150,7 @@ portfolio_low <- do.call(cbind, portfolio_low)
 portfolio_close <- do.call(cbind, portfolio_close)
 portfolio_volume <- do.call(cbind, portfolio_volume)
 portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
-
+head(portfolio_adjusted)
 # * Benchmark
 # Use lapply to convert each xts object to a data frame
 benchmark_open <- lapply(benchmark_open, xts_to_df)
@@ -216,44 +211,81 @@ benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 # *** FUNCTION | SUMMARIZE DATA *** -------------------------------------------
 
 # Function to calculate summary statistics for a portfolio
-summarize <- function(df) {
-  df <- df[, -1] # Remove the first column (Date)
-  summary <- data.frame(
-    Average = colMeans(df),
-    Variance = apply(df, 2, var),
-    Std_Deviation = apply(df, 2, sd)
-    # ! Fix problems
-    # Beta = apply(
-    #   df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
-    # ),
-    # R_squared = apply(
-    #   df, 2, function(col) calculate_beta_r2(col, benchmark_returns)
+summarize <- function(df, benchmark_adjusted) {
+  # Divide each row by the previous one and apply natural logarithm
+  library(dplyr)
+  df <- log(df / lag(df))
+  benchmark_adjusted$EUSA.Adjusted <- log(
+    benchmark_adjusted$EUSA.Adjusted /
+      lag(benchmark_adjusted$EUSA.Adjusted)
   )
-  install.packages("tibble")
+
+  # Replace NA and Inf values with 0
+  df[is.na(df) | df == Inf] <- 0
+  benchmark_adjusted$EUSA.Adjusted[
+    is.na(
+      benchmark_adjusted$EUSA.Adjusted
+    ) | benchmark_adjusted$ColumnName == Inf
+  ] <- 0
+
+  betas <- sapply(names(df), function(col) {
+    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
+    regression_result <- lm(formula, data = cbind(
+      df,
+      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
+    ))
+    coef(regression_result)[2]
+  })
+  r_squared <- sapply(names(df), function(col) {
+    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
+    regression_result <- lm(formula, data = cbind(
+      df,
+      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
+    ))
+    summary(regression_result)$r.squared
+  })
+  summary <- data.frame(
+    Average = colMeans(df, na.rm = TRUE) * 100,
+    Variance = apply(df, 2, var, na.rm = TRUE) * 100,
+    Std_Deviation = apply(df, 2, sd, na.rm = TRUE) * 100,
+    Beta = betas,
+    R_Squared = r_squared
+  )
   library(tibble)
   # Convert row names to a column named "Tickers"
   summary <- rownames_to_column(summary, "Tickers")
   return(summary)
 }
 
+portfolio_adjusted_summary <- summarize(portfolio_adjusted, benchmark_adjusted)
+head(portfolio_adjusted)
+head(portfolio_adjusted_summary)
+View(portfolio_adjusted_summary)
+
+
+# abc <- portfolio_adjusted <- portfolio_adjusted[, -1]
+# abc <- abc / lag(abc)
+# View(portfolio_adjusted)
+# View(abc)
+
 
 # *** SUMMARIZE DATA *** ------------------------------------------------------
 
 # Portfolio summary
-portfolio_open_summary <- summarize(portfolio_open)
-portfolio_high_summary <- summarize(portfolio_high)
-portfolio_low_summary <- summarize(portfolio_low)
-portfolio_close_summary <- summarize(portfolio_close)
-portfolio_volume_summary <- summarize(portfolio_volume)
-portfolio_adjusted_summary <- summarize(portfolio_adjusted)
-View(portfolio_adjusted_summary)
-# Benchmark summary
-benchmark_open_summary <- summarize(benchmark_open)
-benchmark_high_summary <- summarize(benchmark_high)
-benchmark_low_summary <- summarize(benchmark_low)
-benchmark_close_summary <- summarize(benchmark_close)
-benchmark_volume_summary <- summarize(benchmark_volume)
-benchmark_adjusted_summary <- summarize(benchmark_adjusted)
+portfolio_open_summary <- summarize(portfolio_open, benchmark_adjusted)
+portfolio_high_summary <- summarize(portfolio_high, benchmark_adjusted)
+portfolio_low_summary <- summarize(portfolio_low, benchmark_adjusted)
+portfolio_close_summary <- summarize(portfolio_close, benchmark_adjusted)
+portfolio_volume_summary <- summarize(portfolio_volume, benchmark_adjusted)
+portfolio_adjusted_summary <- summarize(portfolio_adjusted, benchmark_adjusted)
+
+# # Benchmark summary (maybe against SP500?)
+# benchmark_open_summary <- summarize(benchmark_open, benchmark_adjusted)
+# benchmark_high_summary <- summarize(benchmark_high, benchmark_adjusted)
+# benchmark_low_summary <- summarize(benchmark_low, benchmark_adjusted)
+# benchmark_close_summary <- summarize(benchmark_close, benchmark_adjusted)
+# benchmark_volume_summary <- summarize(benchmark_volume, benchmark_adjusted)
+# benchmark_adjusted_summary <- summarize(benchmark_adjusted, benchmark_adjusted) # nolint: line_length_linter.
 
 
 # *** FUNCTION | CALCULATE BETA AND R2 *** -------------------------------------
@@ -312,69 +344,69 @@ ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", aapl_adjusted_plot,
 
 
 # !!! TESTS !!! ---------------------------------------------------------------
-plot(Ad(AAPL))
+# plot(Ad(AAPL))
 
 
-chart_Series(AAPL,
-  name = NULL,
-  type = "candlesticks",
-  subset = "",
-  TA = "",
-  pars = chart_pars(),
-  theme = chart_theme(),
-  clev = 0
-)
+# chart_Series(AAPL,
+#   name = NULL,
+#   type = "candlesticks",
+#   subset = "",
+#   TA = "",
+#   pars = chart_pars(),
+#   theme = chart_theme(),
+#   clev = 0
+# )
 
-# Get it
-aapl <- list(AAPL)
-# Use lapply to convert each xts object to a data frame
-aapl <- lapply(aapl, xts_to_df)
-# Combine the data frames into a single data frame
-aapl <- do.call(cbind, aapl)
-# You can't use the "first" column, use this from library(tibble)
-aapl <- rownames_to_column(aapl, "Date")
-# You need to give Date its proper format
-aapl$Date <- as.Date(aapl$Date, format = "%Y-%m-%d")
-View(aapl)
+# # Get it
+# aapl <- list(AAPL)
+# # Use lapply to convert each xts object to a data frame
+# aapl <- lapply(aapl, xts_to_df)
+# # Combine the data frames into a single data frame
+# aapl <- do.call(cbind, aapl)
+# # You can't use the "first" column, use this from library(tibble)
+# aapl <- rownames_to_column(aapl, "Date")
+# # You need to give Date its proper format
+# aapl$Date <- as.Date(aapl$Date, format = "%Y-%m-%d")
+# View(aapl)
 
-# "TTR Composite" (simulated data)
-data(aapl)
+# # "TTR Composite" (simulated data)
+# data(aapl)
 
-# Bollinger Bands
-bbands <- BBands(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
+# # Bollinger Bands
+# bbands <- BBands(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
 
-# Directional Movement Index
-adx <- ADX(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
+# # Directional Movement Index
+# adx <- ADX(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
 
-# Moving Averages
-ema <- EMA(aapl[, "AAPL.Close"], n = 20)
-sma <- SMA(aapl[, "AAPL.Close"], n = 20)
+# # Moving Averages
+# ema <- EMA(aapl[, "AAPL.Close"], n = 20)
+# sma <- SMA(aapl[, "AAPL.Close"], n = 20)
 
-# MACD
-macd <- MACD(aapl[, "AAPL.Close"])
+# # MACD
+# macd <- MACD(aapl[, "AAPL.Close"])
 
-# RSI
-rsi <- RSI(aapl[, "AAPL.Close"])
+# # RSI
+# rsi <- RSI(aapl[, "AAPL.Close"])
 
-# Stochastics
-stoch <- stoch(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
-# TTR works with the chartSeries() function in quantmod. Here's an example that
-# uses chartSeries() and adds TTR-calculated indicators and overlays to the
-# chart.
+# # Stochastics
+# stoch <- stoch(aapl[, c("AAPL.High", "AAPL.Low", "AAPL.Close")])
+# # TTR works with the chartSeries() function in quantmod. Here's an example that
+# # uses chartSeries() and adds TTR-calculated indicators and overlays to the
+# # chart.
 
-# "TTR Composite" (simulated data)
-data(AAPL)
+# # "TTR Composite" (simulated data)
+# data(AAPL)
 
-# Use quantmod's OHLCV extractor function to help create an xts object
-xaapl <- xts(OHLCV(aapl), aapl[["Date"]])
+# # Use quantmod's OHLCV extractor function to help create an xts object
+# xaapl <- xts(OHLCV(aapl), aapl[["Date"]])
 
-chartSeries(xaapl, subset = "2019-02-22/", theme = "white")
-addBBands()
-addRSI()
+# chartSeries(xaapl, subset = "2019-02-22/", theme = "white")
+# addBBands()
+# addRSI()
 
 
 
-ggsave("./aapl.jpg", xaapl, width = 16, height = 9)
+# ggsave("./aapl.jpg", xaapl, width = 16, height = 9)
 
 # *** EXPORT IF NECESSARY *** ------------------------------------------------
 
