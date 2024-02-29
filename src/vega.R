@@ -266,7 +266,6 @@ View(portfolio_adjusted_summary)
 # abc <- portfolio_adjusted <- portfolio_adjusted[, -1]
 # abc <- abc / lag(abc)
 # View(portfolio_adjusted)
-# View(abc)
 
 
 # *** SUMMARIZE DATA *** ------------------------------------------------------
