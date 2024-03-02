@@ -27,8 +27,9 @@ source("./src/install_packages.R")
 # *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
 
 # ! DON'T OPEN ANYTHING THAT'S NOT A DATAFRAME IF YOUR'E USING VSCODE
-# Obtain the ticker symbols
-na.omit(quantmod::getSymbols(
+# ? Uses Quantmod. Consider sponsoring the project on joshuaulrich/quantmod
+# * Obtain the ticker symbols
+na.omit(getSymbols(
   c(
     "EUSA", # Benchmarks (MSCI USA Equal Weighted ETF) # "^GSPC" SP500
     "AAPL", "MSFT", "NVDA", "AMZN", "META",
@@ -43,8 +44,19 @@ na.omit(quantmod::getSymbols(
   to = Sys.Date()
 ))
 
+# * T-bills
+na.omit(quantmod::getSymbols(
+  "TB3MS",
+  src = "FRED",
+  from = Sys.Date() - 1095, # 1095days = 3years
+  to = Sys.Date()
+))
+
 # Benchmarks, necessary to get Beta and R2
 benchmark <- list(EUSA)
+
+# # T-bills, necessary to get the Sharpe ratio
+# tbills <- list(DGS3MO)
 
 # Actual tickers of the portfolio
 list_of_tickers <- list(
@@ -168,9 +180,24 @@ benchmark_close <- do.call(cbind, benchmark_close)
 benchmark_volume <- do.call(cbind, benchmark_volume)
 benchmark_adjusted <- do.call(cbind, benchmark_adjusted)
 
+# tbills_df2 <- do.call(cbind, DGS3MO)
+
+# library(purrr)
+# library(dplyr)
+
+# list_to_df <- function(list_object) {
+#   df <- list_object[[1]] %>%
+#     map_df(~as.data.frame(t(.x), stringsAsFactors = FALSE), )
+#   return(df)
+# }
+
+# T-bills
+# tbills_df <- list_to_df(tbills)
+# View(tbills_df)
+
 # *** GET THE DATE COLUMN *** -------------------------------------------------
 
-# * You can't use the "first" column, use this from library(tibble)
+# * You can't use the "first" column (index), use this from library(tibble)
 # Portfolio
 portfolio_open <- rownames_to_column(portfolio_open, "Date")
 portfolio_high <- rownames_to_column(portfolio_high, "Date")
@@ -191,6 +218,9 @@ benchmark_adjusted <- rownames_to_column(benchmark_adjusted, "Date")
 # *** CHARACTER TO DATE *** ---------------------------------------------------
 
 # ? You need to give Date its proper format
+class(portfolio_adjusted$Date) # character
+class(benchmark_adjusted$Date) # character
+
 # * Portfolio
 portfolio_open$Date <- as.Date(portfolio_open$Date, format = "%Y-%m-%d")
 portfolio_high$Date <- as.Date(portfolio_high$Date, format = "%Y-%m-%d")
@@ -208,10 +238,16 @@ benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
 benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 
 
+class(portfolio_adjusted$Date) # Date
+class(benchmark_adjusted$Date) # Date
+
 # *** FUNCTION | portfolio_metrics *** ----------------------------------------
 
-# Function to calculate general metrics for a portfolio
+# Function to calculate general metrics of a portfolio
 portfolio_metrics <- function(df, benchmark_adjusted) {
+  # Remove the first column (Date index)
+  df <- df[, -1]
+
   # Divide each row by the previous one and apply natural logarithm
   # ? Uses dplyr
   df <- log(df / lag(df))
@@ -248,32 +284,22 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
     summary(regression_result)$r.squared
   })
 
-  # Output
+  # Metrics for each ticker
   metrics <- data.frame(
     Average = colMeans(df, na.rm = TRUE) * 100,
     Variance = apply(df, 2, var, na.rm = TRUE) * 100,
     Std_Deviation = apply(df, 2, sd, na.rm = TRUE) * 100,
     Beta = betas,
-    R_Squared = r_squared
+    R_Squared = r_squared # ! ,
+    # Sharpe_ratio = sharpe_ratio
   )
 
   # ? Uses tibble
-  # Convert row names to a column named "Tickers"
-  metrics <- rownames_to_column(metrics, "Tickers")
+  # Use tickers (column names) as row names
+  metrics <- rownames_to_column(metrics, "Tickers") # nolint
+
   return(metrics)
 }
-
-# ? Test
-portfolio_adjusted_metrics <- portfolio_metrics(
-  portfolio_adjusted, benchmark_adjusted
-)
-head(portfolio_adjusted)
-head(portfolio_adjusted_metrics)
-View(portfolio_adjusted_metrics)
-
-# abc <- portfolio_adjusted <- portfolio_adjusted[, -1]
-# abc <- abc / lag(abc)
-# View(portfolio_adjusted)
 
 
 # *** GET METRICS *** ------------------------------------------------------
@@ -304,52 +330,54 @@ portfolio_adjusted_metrics <- portfolio_metrics(
   portfolio_adjusted, benchmark_adjusted
 )
 
+View(portfolio_adjusted_metrics)
+
 # # Benchmark metrics (maybe against SP500?)
 
 
 # *** VISUALIZATION *** -------------------------------------------------------
 
-aapl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
-  x = Date, y = AAPL.Adjusted
-)) +
-  geom_area_pattern(
-    data = portfolio_adjusted,
-    pattern = "gradient",
-    fill = "#00000000",
-    pattern_fill = "#00000000",
-    pattern_fill2 = "#10006b"
-  ) +
-  ggtitle("APPL price adjusted") +
-  labs(
-    subtitle = "Evolution of Apple over the last 10 years",
-    y = "Price",
-    caption = "R Plot: @VictorBenitoGR | GitHub Repository: VictorBenitoGR/OpenFinancialData" # nolint: line_length_linter.
-  ) +
-  geom_smooth(method = loess, color = "red", fill = "#69b3a2", se = TRUE) +
-  theme_ipsum() +
-  theme(
-    plot.title = element_text(size = 28),
-    plot.subtitle = element_text(size = 22),
-    axis.title.x = element_blank(), # Remove x-axis label
-    axis.title.y = element_blank(), # Remove y-axis label
-    axis.text.x = element_text(size = 20),
-    axis.text.y = element_text(size = 20),
-    plot.caption = element_text(size = 15),
-    panel.border = element_blank(),
-    axis.line.x = element_line(),
-    axis.ticks = element_blank()
-  )
+# aapl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
+#   x = Date, y = AAPL.Adjusted
+# )) +
+#   geom_area_pattern(
+#     data = portfolio_adjusted,
+#     pattern = "gradient",
+#     fill = "#00000000",
+#     pattern_fill = "#00000000",
+#     pattern_fill2 = "#10006b"
+#   ) +
+#   ggtitle("APPL price adjusted") +
+#   labs(
+#     subtitle = "Evolution of Apple over the last 10 years",
+#     y = "Price",
+#     caption = "R Plot: @VictorBenitoGR | GitHub Repository: VictorBenitoGR/OpenFinancialData" # nolint: line_length_linter.
+#   ) +
+#   geom_smooth(method = loess, color = "red", fill = "#69b3a2", se = TRUE) +
+#   theme_ipsum() +
+#   theme(
+#     plot.title = element_text(size = 28),
+#     plot.subtitle = element_text(size = 22),
+#     axis.title.x = element_blank(), # Remove x-axis label
+#     axis.title.y = element_blank(), # Remove y-axis label
+#     axis.text.x = element_text(size = 20),
+#     axis.text.y = element_text(size = 20),
+#     plot.caption = element_text(size = 15),
+#     panel.border = element_blank(),
+#     axis.line.x = element_line(),
+#     axis.ticks = element_blank()
+#   )
 
-# Save the plot
-ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", aapl_adjusted_plot,
-  width = 16, height = 9
-)
+# # Save the plot
+# ggsave("./assets/adjusted_plot/aapl_adjusted_plot.jpg", aapl_adjusted_plot,
+#   width = 16, height = 9
+# )
 
 
 # *** EXPORT IF NECESSARY *** ------------------------------------------------
 
 # Function to export dataframes to an Excel file
-export_to_excel <- function(file, sheet_names, dataframes) {
+export_to_excel <- function(file, sheet_names, dataframes, col_width = 12) {
   library(openxlsx)
 
   # Create a new workbook
@@ -362,25 +390,23 @@ export_to_excel <- function(file, sheet_names, dataframes) {
       wb,
       sheet = sheet_names[i], x = dataframes[[i]], startCol = 1, startRow = 1
     )
+    # Set the column widths
+    setColWidths(wb,
+      sheet = sheet_names[i],
+      cols = seq_len(ncol(dataframes[[i]])),
+      widths = col_width
+    )
   }
 
-  # Save the workbook as xlsx file
-  saveWorkbook(wb, file)
+  # Save the workbook as xlsx file, overwrite if it already exists
+  saveWorkbook(wb, file, overwrite = TRUE)
 }
 
 # Usage example
 export_to_excel(
-  "./data/stock_prices.xlsx", c(
-    "portfolio_adjusted_metrics",
-    "portfolio_open", "portfolio_high", "portfolio_low",
-    "portfolio_close", "portfolio_volume", "portfolio_adjusted",
-    "benchmark_open", "benchmark_high", "benchmark_low",
-    "benchmark_close", "benchmark_volume", "benchmark_adjusted"
+  "./data/Portfolio_Analysis.xlsx", c(
+    "portfolio_adjusted_metrics", "portfolio_adjusted", "benchmark_adjusted"
   ), list(
-    portfolio_adjusted_metrics,
-    portfolio_open, portfolio_high, portfolio_low,
-    portfolio_close, portfolio_volume, portfolio_adjusted,
-    benchmark_open, benchmark_high, benchmark_low,
-    benchmark_close, benchmark_volume, benchmark_adjusted
+    portfolio_adjusted_metrics, portfolio_adjusted, benchmark_adjusted
   )
 )
