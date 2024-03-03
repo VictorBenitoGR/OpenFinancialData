@@ -45,18 +45,18 @@ na.omit(getSymbols(
 ))
 
 # * T-bills
-na.omit(quantmod::getSymbols(
+na.omit(getSymbols(
   "TB3MS",
   src = "FRED",
-  from = Sys.Date() - 1095, # 1095days = 3years
+  from = Sys.Date() - 1125, # ! Make sure you have 36 months
   to = Sys.Date()
 ))
 
 # Benchmarks, necessary to get Beta and R2
 benchmark <- list(EUSA)
 
-# # T-bills, necessary to get the Sharpe ratio
-# tbills <- list(DGS3MO)
+# T-bills, necessary to get the Sharpe ratio
+tbills <- list(TB3MS)
 
 # Actual tickers of the portfolio
 list_of_tickers <- list(
@@ -114,6 +114,7 @@ adjusted_price <- function(df) {
   adjusted_columns <- grep("Adjusted", names(df), value = TRUE)
   return(df[, adjusted_columns, drop = FALSE])
 }
+
 
 # *** SPLIT BY TYPES *** ------------------------------------------------------
 
@@ -180,8 +181,13 @@ benchmark_close <- do.call(cbind, benchmark_close)
 benchmark_volume <- do.call(cbind, benchmark_volume)
 benchmark_adjusted <- do.call(cbind, benchmark_adjusted)
 
-# tbills_df2 <- do.call(cbind, DGS3MO)
+# * T-bills
+# Use lapply to convert each xts object to a data frame
+tbills_df <- lapply(tbills, xts_to_df)
 
+# Combine the data frames into a single data frame
+tbills_df <- do.call(cbind, tbills_df)
+View(tbills_df)
 # library(purrr)
 # library(dplyr)
 
@@ -237,9 +243,12 @@ benchmark_close$Date <- as.Date(benchmark_close$Date, format = "%Y-%m-%d")
 benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
 benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 
-
 class(portfolio_adjusted$Date) # Date
 class(benchmark_adjusted$Date) # Date
+# TODO: Search if there's a difference with POSIXct
+
+View(portfolio_adjusted)
+
 
 # *** FUNCTION | portfolio_metrics *** ----------------------------------------
 
@@ -333,6 +342,14 @@ portfolio_adjusted_metrics <- portfolio_metrics(
 View(portfolio_adjusted_metrics)
 
 # # Benchmark metrics (maybe against SP500?)
+
+
+# *** TIME SERIES ANALYSIS *** ------------------------------------------------
+
+
+
+# *** TIME SERIES FORECASTING *** ---------------------------------------------
+
 
 
 # *** VISUALIZATION *** -------------------------------------------------------
