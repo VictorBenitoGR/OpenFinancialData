@@ -850,8 +850,212 @@ tsa_dfs_weighted_moving_average_n200_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n200_error_pct, envir = .GlobalEnv)
 
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | exponential_smoothing_a0.1_cols *** --------------------------
+# ? Uses stats package
+
+# Define a function to create 'exponential_smoothing_a0.1' columns
+exponential_smoothing_a0_1_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'exponential_smoothing_a0.1' column
+  df[[paste0(original_col, "_exponential_smoothing_a0.1")]] <- stats::filter(df[[original_col]], filter = 0.1, method = "recursive")
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_exponential_smoothing_a0_1 <- lapply(tsa_dfs_weighted_moving_average_n200_error_pct, exponential_smoothing_a0_1_cols)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_exponential_smoothing_a0_1, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | exponential_smoothing_a0.1_error_cols *** --------------------
+
+# Define a function to create 'exponential_smoothing_a0.1_error' columns
+exponential_smoothing_a0_1_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'exponential_smoothing_a0.1_error' column
+  df[[paste0(original_col, "_exponential_smoothing_a0.1_error")]] <-
+    abs(df[[original_col]] - df[[paste0(
+      original_col, "_exponential_smoothing_a0.1"
+    )]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_exponential_smoothing_a0_1_error <- lapply(
+  tsa_dfs_exponential_smoothing_a0_1, exponential_smoothing_a0_1_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_exponential_smoothing_a0_1_error, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | exponential_smoothing_a0.1_error_pct_cols *** ----------------
+
+# Define a function to create 'exponential_smoothing_a0.1_error_pct' columns
+exponential_smoothing_a0_1_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'exponential_smoothing_a0.1_error_pct' column
+  df[[paste0(original_col, "_exponential_smoothing_a0.1_error_pct")]] <-
+    abs((df[[original_col]] -
+      df[[paste0(original_col, "_exponential_smoothing_a0.1")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_exponential_smoothing_a0_1_error_pct <- lapply(
+  tsa_dfs_exponential_smoothing_a0_1_error,
+  exponential_smoothing_a0_1_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_exponential_smoothing_a0_1_error_pct, envir = .GlobalEnv)
+
 View(AAPL.Adjusted_tsa)
 
+
+# *** FUNCTION | exponential_smoothing_a0.9_cols *** --------------------------
+
+# Define a function to create 'exponential_smoothing_a0.9' columns
+exponential_smoothing_a0_9_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'exponential_smoothing_a0.9' column
+  df[[paste0(original_col, "_exponential_smoothing_a0.9")]] <-
+    stats::filter(df[[original_col]], filter = 0.9, method = "recursive")
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_exponential_smoothing_a0_9 <- lapply(
+  tsa_dfs_exponential_smoothing_a0_1_error_pct,
+  exponential_smoothing_a0_9_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_exponential_smoothing_a0_9, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | exponential_smoothing_a0.9_error_cols *** --------------------
+
+# Define a function to create 'exponential_smoothing_a0.9_error' columns
+exponential_smoothing_a0_9_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'exponential_smoothing_a0.9_error' column
+  df[[paste0(original_col, "_exponential_smoothing_a0.9_error")]] <-
+    abs(df[[original_col]] - df[[paste0(
+      original_col, "_exponential_smoothing_a0.9"
+    )]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_exponential_smoothing_a0_9_error <- lapply(
+  tsa_dfs_exponential_smoothing_a0_9, exponential_smoothing_a0_9_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_exponential_smoothing_a0_9_error, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | exponential_smoothing_a0.9_error_pct_cols *** ----------------
+
+# Define a function to create 'exponential_smoothing_a0.9_error_pct' columns
+exponential_smoothing_a0_9_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'exponential_smoothing_a0.9_error_pct' column
+  df[[paste0(original_col, "_exponential_smoothing_a0.9_error_pct")]] <-
+    abs((df[[original_col]] -
+      df[[paste0(original_col, "_exponential_smoothing_a0.9")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_exponential_smoothing_a0_9_error_pct <- lapply(
+  tsa_dfs_exponential_smoothing_a0_9_error,
+  exponential_smoothing_a0_9_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_exponential_smoothing_a0_9_error_pct, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+# View(NVDA.Adjusted_tsa)
+
+
+# *** FUNCTION | arima_cols *** -----------------------------------------------
+# ? Uses forecast package
+# ! TAKES TOO LONG (or maybe is it wrong?). Try again later
+
+# # Define a function to create 'arima' columns
+# arima_cols <- function(df) {
+#   # Get the name of the original column
+#   original_col <- names(df)[1]
+
+#   # Initialize the 'arima' column with NA values
+#   df[[paste0(original_col, "_arima")]] <- NA
+
+#   # Generate a rolling forecast
+#   for (i in nrow(df):1) {
+#     # Fit an ARIMA model to the data up to the current point
+#     arima_model <- forecast::auto.arima(df[1:i, original_col])
+
+#     # Forecast the next value
+#     df[i, paste0(original_col, "_arima")] <- ifelse(i < nrow(df),
+#       forecast::forecast(arima_model, h = 1)$mean, NA
+#     )
+#   }
+
+#   # Return the modified dataframe
+#   return(df)
+# }
+
+# # Apply the function to each dataframe in 'tsa_dfs_exponential_smoothing_a0_9'
+# tsa_dfs_arima <- lapply(
+#   tsa_dfs_exponential_smoothing_a0_9_error_pct, arima_cols
+# )
+
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_arima, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
 
 
 

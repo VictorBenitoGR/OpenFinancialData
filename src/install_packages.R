@@ -22,7 +22,10 @@ packages <- c(
   "zoo", #            S3 Infrastructure for Regular and Irregular Time Series
   "dplyr", #          A Grammar of Data Manipulation
   "DT", #             A Wrapper of the JavaScript Library "DataTables"
-  "patchwork" #       Combine separate ggplots into the same graphic
+  "patchwork", #       Combine separate ggplots into the same graphic
+  "stats", #          The R Stats Package
+  "forecast" #       Forecasting functions for time series
+  # ! add "," at the of the previous package to add a new one
 )
 
 # Function to install and load packages
