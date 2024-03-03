@@ -44,7 +44,7 @@ na.omit(getSymbols(
   to = Sys.Date()
 ))
 
-# * T-bills
+# * 3-Month T-bills
 na.omit(getSymbols(
   "TB3MS",
   src = "FRED",
@@ -337,7 +337,7 @@ tsa_dfs <- generate_tsa_dfs(portfolio_adjusted)
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 
 # *** FUNCTION | last_data_cols *** -------------------------------------------
@@ -365,14 +365,14 @@ last_data_cols <- function(df) {
   return(last_data)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs'
+# Apply the function to each dataframe
 tsa_dfs_last_data <- lapply(tsa_dfs, last_data_cols)
 
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_last_data, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
-class(AAPL.Adjusted_tsa$AAPL.Adjusted_last_data) # Has to be numeric!
+# View(AAPL.Adjusted_tsa)
+
 
 # *** FUNCTION | last_data_error_cols *** -------------------------------------
 
@@ -389,13 +389,13 @@ last_data_error_cols <- function(df) {
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_last_data'
+# Apply the function to each dataframe
 tsa_dfs_last_data_error <- lapply(tsa_dfs_last_data, last_data_error_cols)
 
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_last_data_error, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 
 
 # *** FUNCTION | last_data_error_pct_cols *** ---------------------------------
@@ -414,7 +414,7 @@ last_data_error_pct_cols <- function(df) {
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_last_data_error'
+# Apply the function to each dataframe
 tsa_dfs_last_data_error_pct <- lapply(
   tsa_dfs_last_data_error, last_data_error_pct_cols
 )
@@ -422,7 +422,7 @@ tsa_dfs_last_data_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_last_data_error_pct, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 
 
 # *** FUNCTION | simple_average_cols *** --------------------------------------
@@ -440,7 +440,7 @@ simple_average_cols <- function(df) {
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_last_data_error'
+# Apply the function to each dataframe
 tsa_dfs_simple_average <- lapply(
   tsa_dfs_last_data_error_pct, simple_average_cols
 )
@@ -448,7 +448,7 @@ tsa_dfs_simple_average <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_simple_average, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# # View(AAPL.Adjusted_tsa)
 
 
 # *** FUNCTION | simple_average_error_cols *** --------------------------------
@@ -466,7 +466,7 @@ simple_average_error_cols <- function(df) {
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_simple_average'
+# Apply the function to each dataframe
 tsa_dfs_simple_average_error <- lapply(
   tsa_dfs_simple_average, simple_average_error_cols
 )
@@ -474,7 +474,7 @@ tsa_dfs_simple_average_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_simple_average_error, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 
 
 # *** FUNCTION | simple_average_error_pct_cols *** ---------------------------
@@ -493,7 +493,7 @@ simple_average_error_pct_cols <- function(df) {
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_simple_average_error'
+# Apply the function to each dataframe
 tsa_dfs_simple_average_error_pct <- lapply(
   tsa_dfs_simple_average_error, simple_average_error_pct_cols
 )
@@ -501,22 +501,22 @@ tsa_dfs_simple_average_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_simple_average_error_pct, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 
 
-# *** FUNCTION | moving_average_n30_cols *** ----------------------------------
+# *** FUNCTION | moving_average_n50_cols *** ----------------------------------
 
 # ? Uses zoo
 
-# Define a function to create 'moving_average_n30' columns
-moving_average_n30_cols <- function(df) {
+# Define a function to create 'moving_average_n50' columns
+moving_average_n50_cols <- function(df) {
   # Get the name of the original column
   original_col <- names(df)[1]
 
-  # Create the 'moving_average_n30' column
-  df[[paste0(original_col, "_moving_average_n30")]] <-
+  # Create the 'moving_average_n50' column
+  df[[paste0(original_col, "_moving_average_n50")]] <-
     rollapply(df[[original_col]],
-      width = 30, FUN = mean, align = "right",
+      width = 50, FUN = mean, align = "right",
       fill = NA
     )
 
@@ -524,68 +524,336 @@ moving_average_n30_cols <- function(df) {
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_simple_average_error_pct'
-tsa_dfs_moving_average_n30 <- lapply(
-  tsa_dfs_simple_average_error_pct, moving_average_n30_cols
+# Apply the function to each dataframe
+tsa_dfs_moving_average_n50 <- lapply(
+  tsa_dfs_simple_average_error_pct, moving_average_n50_cols
 )
 
 # Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_moving_average_n30, envir = .GlobalEnv)
+list2env(tsa_dfs_moving_average_n50, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 
 
-# *** FUNCTION | moving_average_n30_error_cols *** ----------------------------
+# *** FUNCTION | moving_average_n50_error_cols *** ----------------------------
 
-# Define a function to create 'moving_average_error' columns
-moving_average_error_cols <- function(df) {
+# Define a function to create 'moving_average_n50_error' columns
+moving_average_n50_error_cols <- function(df) {
   # Get the name of the original column
   original_col <- names(df)[1]
 
-  # Create the 'moving_average_error' column
-  df[[paste0(original_col, "_moving_average_error")]] <-
+  # Create the 'moving_average_n50_error' column
+  df[[paste0(original_col, "_moving_average_n50_error")]] <-
     abs(df[[original_col]] -
-      df[[paste0(original_col, "_moving_average_n30")]])
+      df[[paste0(original_col, "_moving_average_n50")]])
 
   # Return the modified dataframe
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_moving_average_n30'
-tsa_dfs_moving_average_error <- lapply(
-  tsa_dfs_moving_average_n30, moving_average_error_cols
+# Apply the function to each dataframe
+tsa_dfs_moving_average_n50_error <- lapply(
+  tsa_dfs_moving_average_n50, moving_average_n50_error_cols
 )
 
 # Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_moving_average_error, envir = .GlobalEnv)
+list2env(tsa_dfs_moving_average_n50_error, envir = .GlobalEnv)
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL.Adjusted_tsa)
 
 
-# *** FUNCTION | moving_average_error_pct_cols *** ---------------------------
+# *** FUNCTION | moving average_error_n50_pct_cols *** ------------------------
 
 # Define a function to create 'moving_average_error_pct' columns
-moving_average_error_pct_cols <- function(df) {
+moving_average_n50_error_pct_cols <- function(df) {
   # Get the name of the original column
   original_col <- names(df)[1]
 
-  # Create the 'moving_average_error_pct' column
-  df[[paste0(original_col, "_moving_average_error_pct")]] <- abs((df[[original_col]] - df[[paste0(original_col, "_moving_average_n30")]]) / df[[original_col]]) * 100
+  # Create the 'moving_average_n50_error_pct' column
+  df[[paste0(original_col, "_moving_average_n50_error_pct")]] <-
+    abs((df[[original_col]] - df[[paste0(
+      original_col, "_moving_average_n50"
+    )]]) / df[[original_col]]) * 100
 
   # Return the modified dataframe
   return(df)
 }
 
-# Apply the function to each dataframe in 'tsa_dfs_moving_average_error'
-tsa_dfs_moving_average_error_pct <- lapply(tsa_dfs_moving_average_error, moving_average_error_pct_cols)
+# Apply the function to each dataframe
+tsa_dfs_moving_average_n50_error_pct <- lapply(
+  tsa_dfs_moving_average_n50_error, moving_average_n50_error_pct_cols
+)
 
 # Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_moving_average_error_pct, envir = .GlobalEnv)
+list2env(tsa_dfs_moving_average_n50_error_pct, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | moving_average_n200_cols *** ---------------------------------
+
+# Define a function to create 'moving_average_n200' columns
+moving_average_n200_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'moving_average_n200' column
+  df[[paste0(original_col, "_moving_average_n200")]] <-
+    rollapply(df[[original_col]],
+      width = 200, FUN = mean, align = "right",
+      fill = NA
+    )
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_moving_average_n200 <- lapply(
+  tsa_dfs_moving_average_n50_error_pct, moving_average_n200_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_moving_average_n200, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | moving_average_n200_error_cols *** ---------------------------
+
+# Define a function to create 'moving_average_n200_error' columns
+moving_average_n200_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'moving_average_n200_error' column
+  df[[paste0(original_col, "_moving_average_n200_error")]] <-
+    abs(df[[original_col]] - df[[paste0(
+      original_col, "_moving_average_n200"
+    )]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_moving_average_n200_error <- lapply(
+  tsa_dfs_moving_average_n200, moving_average_n200_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_moving_average_n200_error, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | moving_average_n200_error_pct_cols *** -----------------------
+
+# Define a function to create 'moving_average_n200_error_pct' columns
+moving_average_n200_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'moving_average_n200_error_pct' column
+  df[[paste0(original_col, "_moving_average_n200_error_pct")]] <-
+    abs((df[[original_col]] -
+      df[[paste0(original_col, "_moving_average_n200")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_moving_average_n200_error_pct <- lapply(
+  tsa_dfs_moving_average_n200_error, moving_average_n200_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_moving_average_n200_error_pct, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | weighted_moving_average_n50_cols *** -------------------------
+
+# Define a function to create 'weighted_moving_average_n50' columns
+weighted_moving_average_n50_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the weights
+  weights <- seq(30, 1, length.out = 50)
+
+  # Create the 'weighted_moving_average_n50' column
+  df[[paste0(original_col, "_weighted_moving_average_n50")]] <-
+    rollapply(df[[original_col]],
+      width = 50, FUN = function(x) sum(x * weights) / sum(weights),
+      align = "right", fill = NA
+    )
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_weighted_moving_average_n50 <- lapply(
+  tsa_dfs_moving_average_n200_error_pct, weighted_moving_average_n50_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_weighted_moving_average_n50, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | weighted_moving_average_n50_error_cols *** -------------------
+
+# Define a function to create 'weighted_moving_average_n50_error' columns
+weighted_moving_average_n50_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'weighted_moving_average_n50_error' column
+  df[[paste0(original_col, "_weighted_moving_average_n50_error")]] <-
+    abs(df[[original_col]] - df[[paste0(
+      original_col, "_weighted_moving_average_n50"
+    )]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_weighted_moving_average_n50_error <- lapply(
+  tsa_dfs_weighted_moving_average_n50, weighted_moving_average_n50_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_weighted_moving_average_n50_error, envir = .GlobalEnv)
+
+# # View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | weighted_moving_average_n50_error_pct_cols *** ---------------
+
+# Define a function to create 'weighted_moving_average_n50_error_pct' columns
+weighted_moving_average_n50_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'weighted_moving_average_n50_error_pct' column
+  df[[paste0(original_col, "_weighted_moving_average_n50_error_pct")]] <-
+    abs((df[[original_col]] -
+      df[[paste0(original_col, "_weighted_moving_average_n50")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_weighted_moving_average_n50_error_pct <- lapply(
+  tsa_dfs_weighted_moving_average_n50_error,
+  weighted_moving_average_n50_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_weighted_moving_average_n50_error_pct, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | weighted_moving_average_n200_cols *** ------------------------
+
+# Define a function to create 'weighted_moving_average_n200' columns
+weighted_moving_average_n200_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the weights
+  weights <- seq(30, 1, length.out = 200)
+
+  # Create the 'weighted_moving_average_n200' column
+  df[[paste0(original_col, "_weighted_moving_average_n200")]] <-
+    rollapply(df[[original_col]],
+      width = 200, FUN = function(x) sum(x * weights) / sum(weights),
+      align = "right", fill = NA
+    )
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_weighted_moving_average_n200 <- lapply(
+  tsa_dfs_moving_average_n50_error_pct, weighted_moving_average_n200_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_weighted_moving_average_n200, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | weighted_moving_average_n200_error_cols *** ------------------
+
+# Define a function to create 'weighted_moving_average_n200_error' columns
+weighted_moving_average_n200_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'weighted_moving_average_n200_error' column
+  df[[paste0(original_col, "_weighted_moving_average_n200_error")]] <-
+    abs(df[[original_col]] - df[[paste0(
+      original_col, "_weighted_moving_average_n200"
+    )]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_weighted_moving_average_n200_error <- lapply(
+  tsa_dfs_weighted_moving_average_n200, weighted_moving_average_n200_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_weighted_moving_average_n200_error, envir = .GlobalEnv)
+
+# View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | weighted_moving_average_n200_error_pct_cols *** --------------
+
+# Define a function to create 'weighted_moving_average_n200_error_pct' columns
+weighted_moving_average_n200_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'weighted_moving_average_n200_error_pct' column
+  df[[paste0(original_col, "_weighted_moving_average_n200_error_pct")]] <-
+    abs((df[[original_col]] -
+      df[[paste0(original_col, "_weighted_moving_average_n200")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe
+tsa_dfs_weighted_moving_average_n200_error_pct <- lapply(
+  tsa_dfs_weighted_moving_average_n200_error,
+  weighted_moving_average_n200_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_weighted_moving_average_n200_error_pct, envir = .GlobalEnv)
 
 View(AAPL.Adjusted_tsa)
 
 
-#
+
 
 # *** TIME SERIES FORECASTING *** ---------------------------------------------
 
