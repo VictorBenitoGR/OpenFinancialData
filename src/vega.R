@@ -164,6 +164,9 @@ portfolio_close <- do.call(cbind, portfolio_close)
 portfolio_volume <- do.call(cbind, portfolio_volume)
 portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
 
+head(portfolio_adjusted)
+View(portfolio_adjusted)
+
 # * Benchmark
 # Use lapply to convert each xts object to a data frame
 benchmark_open <- lapply(benchmark_open, xts_to_df)
@@ -187,7 +190,8 @@ tbills_df <- lapply(tbills, xts_to_df)
 
 # Combine the data frames into a single data frame
 tbills_df <- do.call(cbind, tbills_df)
-View(tbills_df)
+# View(tbills_df)
+
 # library(purrr)
 # library(dplyr)
 
@@ -201,61 +205,13 @@ View(tbills_df)
 # tbills_df <- list_to_df(tbills)
 # View(tbills_df)
 
-# *** GET THE DATE COLUMN *** -------------------------------------------------
-
-# * You can't use the "first" column (index), use this from library(tibble)
-# Portfolio
-portfolio_open <- rownames_to_column(portfolio_open, "Date")
-portfolio_high <- rownames_to_column(portfolio_high, "Date")
-portfolio_low <- rownames_to_column(portfolio_low, "Date")
-portfolio_close <- rownames_to_column(portfolio_close, "Date")
-portfolio_volume <- rownames_to_column(portfolio_volume, "Date")
-portfolio_adjusted <- rownames_to_column(portfolio_adjusted, "Date")
-
-# Benchmark
-benchmark_open <- rownames_to_column(benchmark_open, "Date")
-benchmark_high <- rownames_to_column(benchmark_high, "Date")
-benchmark_low <- rownames_to_column(benchmark_low, "Date")
-benchmark_close <- rownames_to_column(benchmark_close, "Date")
-benchmark_volume <- rownames_to_column(benchmark_volume, "Date")
-benchmark_adjusted <- rownames_to_column(benchmark_adjusted, "Date")
-
-
-# *** CHARACTER TO DATE *** ---------------------------------------------------
-
-# ? You need to give Date its proper format
-class(portfolio_adjusted$Date) # character
-class(benchmark_adjusted$Date) # character
-
-# * Portfolio
-portfolio_open$Date <- as.Date(portfolio_open$Date, format = "%Y-%m-%d")
-portfolio_high$Date <- as.Date(portfolio_high$Date, format = "%Y-%m-%d")
-portfolio_low$Date <- as.Date(portfolio_low$Date, format = "%Y-%m-%d")
-portfolio_close$Date <- as.Date(portfolio_close$Date, format = "%Y-%m-%d")
-portfolio_volume$Date <- as.Date(portfolio_volume$Date, format = "%Y-%m-%d")
-portfolio_adjusted$Date <- as.Date(portfolio_adjusted$Date, format = "%Y-%m-%d")
-
-# * Benchmark
-benchmark_open$Date <- as.Date(benchmark_open$Date, format = "%Y-%m-%d")
-benchmark_high$Date <- as.Date(benchmark_high$Date, format = "%Y-%m-%d")
-benchmark_low$Date <- as.Date(benchmark_low$Date, format = "%Y-%m-%d")
-benchmark_close$Date <- as.Date(benchmark_close$Date, format = "%Y-%m-%d")
-benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
-benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
-
-class(portfolio_adjusted$Date) # Date
-class(benchmark_adjusted$Date) # Date
-# TODO: Search if there's a difference with POSIXct
-
-View(portfolio_adjusted)
-
 
 # *** FUNCTION | portfolio_metrics *** ----------------------------------------
 
 # Function to calculate general metrics of a portfolio
 portfolio_metrics <- function(df, benchmark_adjusted) {
-  # Remove the first column (Date index)
-  df <- df[, -1]
+  # // Remove the first column (Date index)
+  # // df <- df[, -1] # If you have the Date column
 
   # Divide each row by the previous one and apply natural logarithm
   # ? Uses dplyr
@@ -344,12 +300,344 @@ View(portfolio_adjusted_metrics)
 # # Benchmark metrics (maybe against SP500?)
 
 
-# *** TIME SERIES ANALYSIS *** ------------------------------------------------
+# *** SPLIT DATAFRAMES *** ----------------------------------------------------
+
+generate_tsa_dfs <- function(df) {
+  # Initialize an empty list to store the dataframes
+  df_list <- list()
+
+  # Loop over the columns in the dataframe
+  for (col_name in names(df)) {
+    # Create a new dataframe with a single column and the original index
+    new_df <- data.frame(cbind(row.names(df), df[[col_name]]),
+      check.names = FALSE
+    )
+
+    # Set the column names of the new dataframe
+    names(new_df) <- c("index", col_name)
+
+    # Convert the column data back to numeric
+    new_df[[col_name]] <- as.numeric(as.character(new_df[[col_name]]))
+
+    # Set the row names of the new dataframe to the original index
+    row.names(new_df) <- new_df$index
+    new_df$index <- NULL
+
+    # Add the new dataframe to the list
+    df_list[[paste0(col_name, "_tsa")]] <- new_df
+  }
+
+  # Return the list of dataframes
+  return(df_list)
+}
+
+# Use the function to generate the dataframes
+tsa_dfs <- generate_tsa_dfs(portfolio_adjusted)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
+
+# *** FUNCTION | last_data_cols *** -------------------------------------------
+
+# Define a function to create 'last_data' columns
+last_data_cols <- function(df) {
+  # Create the 'last_data' columns
+  last_data <- df %>%
+    mutate(across(everything(), lag, .names = "{.col}_last_data"))
+
+  # Get the names of the original and 'last_data' columns
+  original_cols <- names(df)
+  last_data_cols <- grep("_last_data$", names(last_data), value = TRUE)
+
+  # Interleave the names of the original and 'last_data' columns
+  column_order <- c(rbind(
+    matrix(original_cols, nrow = 1),
+    matrix(last_data_cols, nrow = 1)
+  ))
+
+  # Reorder the columns in the 'last_data' dataframe
+  last_data <- last_data[, column_order]
+
+  # Return the modified dataframe
+  return(last_data)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs'
+tsa_dfs_last_data <- lapply(tsa_dfs, last_data_cols)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_last_data, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+class(AAPL.Adjusted_tsa$AAPL.Adjusted_last_data) # Has to be numeric!
+
+# *** FUNCTION | last_data_error_cols *** -------------------------------------
+
+# Define a function to create 'last_data_error' columns
+last_data_error_cols <- function(df) {
+  # Get the names of the first two columns
+  col1 <- names(df)[1]
+  col2 <- names(df)[2]
+
+  # Create the 'last_data_error' column
+  df[[paste0(col1, "_last_data_error")]] <- abs(df[[col1]] - df[[col2]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_last_data'
+tsa_dfs_last_data_error <- lapply(tsa_dfs_last_data, last_data_error_cols)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_last_data_error, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
 
 
+# *** FUNCTION | last_data_error_pct_cols *** ---------------------------------
+
+# Define a function to create 'last_data_error_pct' columns
+last_data_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'last_data_error_pct' column
+  df[[paste0(original_col, "_last_data_error_pct")]] <-
+    abs((df[[original_col]] - df[[paste0(original_col, "_last_data")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_last_data_error'
+tsa_dfs_last_data_error_pct <- lapply(
+  tsa_dfs_last_data_error, last_data_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_last_data_error_pct, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | simple_average_cols *** --------------------------------------
+
+# Define a function to create 'simple_average' columns
+simple_average_cols <- function(df) {
+  # Get the name of the first column
+  col1 <- names(df)[1]
+
+  # Create the 'simple_average' column
+  df[[paste0(col1, "_simple_average")]] <-
+    cumsum(df[[col1]]) / seq_along(df[[col1]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_last_data_error'
+tsa_dfs_simple_average <- lapply(
+  tsa_dfs_last_data_error_pct, simple_average_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_simple_average, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | simple_average_error_cols *** --------------------------------
+
+# Define a function to create 'simple_average_error' columns
+simple_average_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'simple_average_error' column
+  df[[paste0(original_col, "_simple_average_error")]] <-
+    abs(df[[original_col]] - df[[paste0(original_col, "_simple_average")]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_simple_average'
+tsa_dfs_simple_average_error <- lapply(
+  tsa_dfs_simple_average, simple_average_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_simple_average_error, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | simple_average_error_pct_cols *** ---------------------------
+
+# Define a function to create 'simple_average_error_pct' columns
+simple_average_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'simple_average_error_pct' column
+  df[[paste0(original_col, "_simple_average_error_pct")]] <-
+    abs((df[[original_col]] - df[[paste0(original_col, "_simple_average")]]) /
+      df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_simple_average_error'
+tsa_dfs_simple_average_error_pct <- lapply(
+  tsa_dfs_simple_average_error, simple_average_error_pct_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_simple_average_error_pct, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | moving_average_n30_cols *** ----------------------------------
+
+# ? Uses zoo
+
+# Define a function to create 'moving_average_n30' columns
+moving_average_n30_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'moving_average_n30' column
+  df[[paste0(original_col, "_moving_average_n30")]] <-
+    rollapply(df[[original_col]],
+      width = 30, FUN = mean, align = "right",
+      fill = NA
+    )
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_simple_average_error_pct'
+tsa_dfs_moving_average_n30 <- lapply(
+  tsa_dfs_simple_average_error_pct, moving_average_n30_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_moving_average_n30, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | moving_average_n30_error_cols *** ----------------------------
+
+# Define a function to create 'moving_average_error' columns
+moving_average_error_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'moving_average_error' column
+  df[[paste0(original_col, "_moving_average_error")]] <-
+    abs(df[[original_col]] -
+      df[[paste0(original_col, "_moving_average_n30")]])
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_moving_average_n30'
+tsa_dfs_moving_average_error <- lapply(
+  tsa_dfs_moving_average_n30, moving_average_error_cols
+)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_moving_average_error, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+# *** FUNCTION | moving_average_error_pct_cols *** ---------------------------
+
+# Define a function to create 'moving_average_error_pct' columns
+moving_average_error_pct_cols <- function(df) {
+  # Get the name of the original column
+  original_col <- names(df)[1]
+
+  # Create the 'moving_average_error_pct' column
+  df[[paste0(original_col, "_moving_average_error_pct")]] <- abs((df[[original_col]] - df[[paste0(original_col, "_moving_average_n30")]]) / df[[original_col]]) * 100
+
+  # Return the modified dataframe
+  return(df)
+}
+
+# Apply the function to each dataframe in 'tsa_dfs_moving_average_error'
+tsa_dfs_moving_average_error_pct <- lapply(tsa_dfs_moving_average_error, moving_average_error_pct_cols)
+
+# Create variables in your environment for each dataframe in the list
+list2env(tsa_dfs_moving_average_error_pct, envir = .GlobalEnv)
+
+View(AAPL.Adjusted_tsa)
+
+
+#
 
 # *** TIME SERIES FORECASTING *** ---------------------------------------------
 
+
+
+# *** GET THE DATE COLUMN *** -------------------------------------------------
+
+# * You can't use the "first" column (index), use this from library(tibble)
+# Portfolio
+portfolio_open <- rownames_to_column(portfolio_open, "Date")
+portfolio_high <- rownames_to_column(portfolio_high, "Date")
+portfolio_low <- rownames_to_column(portfolio_low, "Date")
+portfolio_close <- rownames_to_column(portfolio_close, "Date")
+portfolio_volume <- rownames_to_column(portfolio_volume, "Date")
+portfolio_adjusted <- rownames_to_column(portfolio_adjusted, "Date")
+
+# Benchmark
+benchmark_open <- rownames_to_column(benchmark_open, "Date")
+benchmark_high <- rownames_to_column(benchmark_high, "Date")
+benchmark_low <- rownames_to_column(benchmark_low, "Date")
+benchmark_close <- rownames_to_column(benchmark_close, "Date")
+benchmark_volume <- rownames_to_column(benchmark_volume, "Date")
+benchmark_adjusted <- rownames_to_column(benchmark_adjusted, "Date")
+
+
+# *** CHARACTER TO DATE *** ---------------------------------------------------
+
+# ? You need to give Date its proper format
+class(portfolio_adjusted$Date) # character
+class(benchmark_adjusted$Date) # character
+
+# * Portfolio
+portfolio_open$Date <- as.Date(portfolio_open$Date, format = "%Y-%m-%d")
+portfolio_high$Date <- as.Date(portfolio_high$Date, format = "%Y-%m-%d")
+portfolio_low$Date <- as.Date(portfolio_low$Date, format = "%Y-%m-%d")
+portfolio_close$Date <- as.Date(portfolio_close$Date, format = "%Y-%m-%d")
+portfolio_volume$Date <- as.Date(portfolio_volume$Date, format = "%Y-%m-%d")
+portfolio_adjusted$Date <- as.Date(portfolio_adjusted$Date, format = "%Y-%m-%d")
+
+# * Benchmark
+benchmark_open$Date <- as.Date(benchmark_open$Date, format = "%Y-%m-%d")
+benchmark_high$Date <- as.Date(benchmark_high$Date, format = "%Y-%m-%d")
+benchmark_low$Date <- as.Date(benchmark_low$Date, format = "%Y-%m-%d")
+benchmark_close$Date <- as.Date(benchmark_close$Date, format = "%Y-%m-%d")
+benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
+benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
+
+class(portfolio_adjusted$Date) # Date
+class(benchmark_adjusted$Date) # Date
+# TODO: Search if there's a difference with POSIXct
+
+View(portfolio_adjusted)
 
 
 # *** VISUALIZATION *** -------------------------------------------------------
