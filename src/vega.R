@@ -44,11 +44,11 @@ na.omit(getSymbols(
   to = Sys.Date()
 ))
 
-# * 3-Month T-bills
+# * 3-Month/90-Day T-bills
 na.omit(getSymbols(
-  "TB3MS",
+  "DGS3MO",
   src = "FRED",
-  from = Sys.Date() - 1826, # ! Make sure you have 36 months
+  from = Sys.Date() - 1826, # ! Make sure you have 60 months
   to = Sys.Date()
 ))
 
@@ -56,7 +56,7 @@ na.omit(getSymbols(
 benchmark <- list(EUSA)
 
 # T-bills, necessary to get the Sharpe ratio
-tbills <- list(TB3MS)
+tbills <- list(DGS3MO)
 
 # Actual tickers of the portfolio
 list_of_tickers <- list(
@@ -190,20 +190,50 @@ tbills_df <- lapply(tbills, xts_to_df)
 
 # Combine the data frames into a single data frame
 tbills_df <- do.call(cbind, tbills_df)
-# View(tbills_df)
 
-# library(purrr)
-# library(dplyr)
+# Replace 'Invalid Number' with NA
+tbills_df$DGS3MO <- sub("Invalid Number", NA, tbills_df$DGS3MO)
 
-# list_to_df <- function(list_object) {
-#   df <- list_object[[1]] %>%
-#     map_df(~as.data.frame(t(.x), stringsAsFactors = FALSE), )
-#   return(df)
-# }
+# Transform tbills_df$DGS3MO to numeric and divide by 100 for percentage
+tbills_df$DGS3MO <- as.numeric(tbills_df$DGS3MO) / 100
 
-# T-bills
-# tbills_df <- list_to_df(tbills)
-# View(tbills_df)
+class(tbills_df$DGS3MO) # ! Has to be numeric!
+
+View(tbills_df)
+
+
+# *** FUNCTION | tbills_metrics *** -------------------------------------------
+
+# Function to calculate the risk-free rate
+tbills_metrics <- function(df) {
+  # Calculate the average risk-free rate
+  risk_free_rate <- mean(df$DGS3MO, na.rm = TRUE)
+
+  # Return the risk-free rate
+  return(risk_free_rate)
+}
+
+# Calculate the risk-free rate
+risk_free_rate <- tbills_metrics(tbills_df)
+
+View(risk_free_rate)
+
+
+# *** FUNCTION | benchmark_metrics *** -------------------------------------------
+
+# Function to calculate the market average
+benchmark_metrics <- function(df) {
+  # Calculate the average market price
+  market_average <- mean(df$EUSA.Adjusted, na.rm = TRUE)
+
+  # Return the market average
+  return(market_average)
+}
+View(benchmark_adjusted)
+# Calculate the market average
+market_average <- benchmark_metrics(benchmark_adjusted)
+
+View(market_average)
 
 
 # *** FUNCTION | portfolio_metrics *** ----------------------------------------
@@ -229,7 +259,13 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
     ) | benchmark_adjusted$ColumnName == Inf
   ] <- 0
 
-  # Calculate betas for each column in the data frame
+  # Calculate metrics
+  average <- colMeans(df, na.rm = TRUE) * 100
+
+  variance <- apply(df, 2, var, na.rm = TRUE) * 100
+
+  std_deviation <- apply(df, 2, sd, na.rm = TRUE) * 100
+
   betas <- sapply(names(df), function(col) {
     formula <- as.formula(paste(col, "~ EUSA.Adjusted")) # ! Optimize
     regression_result <- lm(formula, data = cbind(
@@ -239,7 +275,6 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
     coef(regression_result)[2]
   })
 
-  # Calculate R-squared values for each column in the data frame
   r_squared <- sapply(names(df), function(col) {
     formula <- as.formula(paste(col, "~ EUSA.Adjusted")) # ! Optimize
     regression_result <- lm(formula, data = cbind(
@@ -249,14 +284,25 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
     summary(regression_result)$r.squared
   })
 
+  sharpe <- (average - risk_free_rate) / std_deviation
+
+  tryenor <- (average - risk_free_rate) / betas
+
+  # ? Alpha = R(i) - (R(f) + B * (R(m) - R(f)))
+  # ? where:
+  # ? R(i) = the realized return of the portfolio or investment
+  # ? R(m) = the realized return of the appropriate market index
+  # ? R(f) = the risk-free rate of return for the time period
+  # ? B = the beta of the portfolio of investment
+
+  # jensen_aplha <- average - (
+  #   risk_free_rate + betas * (market_average - risk_free_rate)
+  # ) # ! Need market_average
+
   # Metrics for each ticker
   metrics <- data.frame(
-    Average = colMeans(df, na.rm = TRUE) * 100,
-    Variance = apply(df, 2, var, na.rm = TRUE) * 100,
-    Std_Deviation = apply(df, 2, sd, na.rm = TRUE) * 100,
-    Beta = betas,
-    R_Squared = r_squared # ! ,
-    # Sharpe_ratio = sharpe_ratio
+    average, variance, std_deviation, betas, r_squared, sharpe, tryenor
+    # , jensen_aplha
   )
 
   # ? Uses tibble
@@ -266,8 +312,13 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
   return(metrics)
 }
 
+# portfolio_adjusted_metrics <- portfolio_metrics(
+#   portfolio_adjusted, benchmark_adjusted
+# )
 
-# *** GET METRICS *** ------------------------------------------------------
+# View(portfolio_adjusted_metrics)
+
+# *** GET METRICS *** ---------------------------------------------------------
 # ! Optimize
 
 # Portfolio metrics
@@ -297,7 +348,26 @@ portfolio_adjusted_metrics <- portfolio_metrics(
 
 View(portfolio_adjusted_metrics)
 
-# # Benchmark metrics (maybe against SP500?)
+head(portfolio_adjusted_metrics)
+
+# *** FUNCTION | weights *** --------------------------------------------------
+# ? Uses PortfolioAnalytics package
+
+# Create a new portfolio specification
+portf <- portfolio.spec(assets = colnames(portfolio_adjusted_metrics))
+
+# Add constraints
+portf <- add.constraint(portfolio = portf, type = "full_investment")
+
+# Add objective
+portf <- add.objective(portfolio = portf, type = "return", name = "mean")
+portf <- add.objective(portfolio = portf, type = "risk", name = "StdDev")
+
+# Optimize the portfolio
+optimal_portfolio <- optimize.portfolio(R = portfolio_adjusted_metrics, portfolio = portf, optimize_method = "ROI")
+
+# Get the weights of the optimal portfolio
+weights <- optimal_portfolio$weights
 
 
 # *** SPLIT DATAFRAMES *** ----------------------------------------------------
@@ -401,7 +471,7 @@ class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 # # View(AAPL.Adjusted_tsa)
 
 
-# # *** FUNCTION | last_data_error_pct_cols *** ---------------------------------
+# # *** FUNCTION | last_data_error_pct_cols *** --------------------------------
 # ! Not useful at all
 
 # # Define a function to create 'last_data_error_pct' columns
