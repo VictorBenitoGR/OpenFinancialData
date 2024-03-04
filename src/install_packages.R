@@ -16,6 +16,7 @@ packages <- c(
   "tibble", #         Simple data frames
   "tidyverse", #      Data manipulation and visualization packages
   "ggplot2", #        Data visualization
+  "ggthemes", #       Extra themes, scales and geoms for ggplot2
   "ggpattern", #      Geoms and scales for patterned filled geoms
   "hrbrthemes", #     Opinionated, typographic-centric ggplot2 themes
   "highcharter", #    R wrapper for Highcharts

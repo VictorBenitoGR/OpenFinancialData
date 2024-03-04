@@ -40,7 +40,7 @@ na.omit(getSymbols(
     "ADBE", "NFLX", "WMT", "KO", "BAC"
   ),
   src = "yahoo",
-  from = Sys.Date() - 1095, # 1095days = 3years
+  from = Sys.Date() - 1826, # 1826days = 5years
   to = Sys.Date()
 ))
 
@@ -48,7 +48,7 @@ na.omit(getSymbols(
 na.omit(getSymbols(
   "TB3MS",
   src = "FRED",
-  from = Sys.Date() - 1125, # ! Make sure you have 36 months
+  from = Sys.Date() - 1826, # ! Make sure you have 36 months
   to = Sys.Date()
 ))
 
@@ -791,7 +791,8 @@ weighted_moving_average_n200_cols <- function(df) {
 
 # Apply the function to each dataframe
 tsa_dfs_weighted_moving_average_n200 <- lapply(
-  tsa_dfs_weighted_moving_average_n50_error_pct, weighted_moving_average_n200_cols
+  tsa_dfs_weighted_moving_average_n50_error_pct,
+  weighted_moving_average_n200_cols
 )
 
 # Create variables in your environment for each dataframe in the list
@@ -866,14 +867,18 @@ exponential_smoothing_a0_1_cols <- function(df) {
   original_col <- names(df)[1]
 
   # Create the 'exponential_smoothing_a0.1' column
-  df[[paste0(original_col, "_exponential_smoothing_a0.1")]] <- stats::filter(df[[original_col]], filter = 0.1, method = "recursive")
+  df[[paste0(original_col, "_exponential_smoothing_a0.1")]] <-
+    stats::filter(df[[original_col]], filter = 0.1, method = "recursive")
 
   # Return the modified dataframe
   return(df)
 }
 
 # Apply the function to each dataframe
-tsa_dfs_exponential_smoothing_a0_1 <- lapply(tsa_dfs_weighted_moving_average_n200_error_pct, exponential_smoothing_a0_1_cols)
+tsa_dfs_exponential_smoothing_a0_1 <- lapply(
+  tsa_dfs_weighted_moving_average_n200_error_pct,
+  exponential_smoothing_a0_1_cols
+)
 
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_exponential_smoothing_a0_1, envir = .GlobalEnv)
@@ -1070,16 +1075,21 @@ View(AAPL.Adjusted_tsa)
 # Get the data for AAPL
 df <- AAPL.Adjusted_tsa
 
+# Convert row names to a column
+df <- df %>% rownames_to_column("Date")
+
+# colnames(df)
+
 # Convert the data to long format for plotting
 df_long <- df %>%
-  mutate(Date = row_number()) %>%
+  mutate(Date = as.Date(Date)) %>%
+  select(Date, 2, 3, 6, 9, 12, 15, 18) %>% # Select columns by their positions
   pivot_longer(
-    cols = c(1, 2, 5, 8, 11, 14, 17),
+    cols = -Date, # Exclude the Date column
     names_to = "Variable",
     values_to = "Value"
   )
 
-# Create the plot
 visualize_differences <- ggplot(df_long, aes(
   x = Date, y = Value, color = Variable
 )) +
@@ -1090,17 +1100,18 @@ visualize_differences <- ggplot(df_long, aes(
     "purple", "yellow", "brown", "pink"
   )) +
   labs(x = "Date", y = "Value", color = "Variable") +
-  theme_linedraw()
+  theme_linedraw() +
+  theme(legend.position = c(.15, .85)) # Legend inside the plot
 
 # Save the plot
 ggsave("./assets/tsa_plots/differences.jpg", visualize_differences,
   width = 16, height = 9
 )
 
+# Ctrl + P > differences.jpg
+
 
 # *** FUNCTION | portfolio_tsa *** -------------------------------------------
-
-colnames(AAPL.Adjusted_tsa)
 
 # Initialize an empty dataframe
 portfolio_tsa <- data.frame(matrix(ncol = 7, nrow = 0))
@@ -1123,17 +1134,17 @@ for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
 
   portfolio_tsa[i, "company"] <- company_name
   portfolio_tsa[i, "simple_average_error_pct"] <-
-    mean(df[[3]], na.rm = TRUE)
+    mean(df[[4]], na.rm = TRUE)
   portfolio_tsa[i, "moving_average_n50_error_pct"] <-
-    mean(df[[6]], na.rm = TRUE)
+    mean(df[[7]], na.rm = TRUE)
   portfolio_tsa[i, "moving_average_n200_error_pct"] <-
-    mean(df[[9]], na.rm = TRUE)
+    mean(df[[10]], na.rm = TRUE)
   portfolio_tsa[i, "weighted_moving_average_n50_error_pct"] <-
-    mean(df[[12]], na.rm = TRUE)
+    mean(df[[13]], na.rm = TRUE)
   portfolio_tsa[i, "weighted_moving_average_n200_error_pct"] <-
-    mean(df[[15]], na.rm = TRUE)
-  portfolio_tsa[i, "exponential_smoothing_a0.1_error_pct"] <
-    mean(df[[18]], na.rm = TRUE)
+    mean(df[[16]], na.rm = TRUE)
+  portfolio_tsa[i, "exponential_smoothing_a0.1_error_pct"] <-
+    mean(df[[19]], na.rm = TRUE)
 
   # Print the best method for this company
   best_method <- which.min(portfolio_tsa[i, 2:7])
@@ -1147,6 +1158,8 @@ for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
   # Add the averages to the overall averages
   overall_averages <- overall_averages + portfolio_tsa[i, 2:7]
 }
+
+# View(NVDA.Adjusted_tsa) # Erratic
 
 # Calculate the overall averages
 overall_averages <- overall_averages /
@@ -1170,15 +1183,23 @@ portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
     df <- tsa_dfs_exponential_smoothing_a0_1_error_pct[[i]]
     company_name <- names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]
 
+    # Obtain the ticker without the ".Adjusted_tsa"
+    company_title <- substr(
+      names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i], 1,
+      nchar(names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]) - 13
+    )
+
     # Determine the best method
-    all_columns <- seq(3, ncol(df), by = 3) # Adjust this as per your data
+    all_columns <- seq(3, ncol(df), by = 3) # Adjust according to col place
     avg_errors <- colMeans(df[, all_columns], na.rm = TRUE)
     best_method <- order(avg_errors)[1]
-    best_method_column <- all_columns[best_method] - 1 # Use the column before the best method
-
+    # Use the column before the best method
+    best_method_column <- all_columns[best_method] - 1
+    best_method_name <- colnames(df)[best_method_column]
     # Convert the data to long format for plotting
     df_long <- df %>%
-      mutate(Date = as.Date(rownames(df))) %>% # Get the dates from the row names
+      # Get the dates with the proper format
+      mutate(Date = as.Date(rownames(df))) %>%
       pivot_longer(
         cols = c(1, best_method_column),
         names_to = "Variable",
@@ -1188,9 +1209,28 @@ portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
     # Create the plot
     plot <- ggplot(df_long, aes(x = Date, y = Value, color = Variable)) +
       geom_line() +
-      scale_color_manual(values = c("darkred", "red")) +
+      scale_color_manual(values = c("#000000", "red")) +
       labs(x = "Date", y = "Value", color = "Variable") +
-      theme_minimal()
+      ggtitle(paste(company_title, "Time Series Analysis")) +
+      labs(
+        subtitle = paste("Evolution of", best_method_name, " (red) over the last 5 years."), # nolint: line_length_linter.
+        y = "Adjusted Price",
+        caption = "R Plot: @VictorBenitoGR | GitHub Repository: VictorBenitoGR/OpenFinancialData" # nolint: line_length_linter.
+      ) +
+      theme_ipsum() +
+      theme(
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 22),
+        axis.title.x = element_blank(), # Remove x-axis label
+        axis.title.y = element_blank(), # Remove y-axis label
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        plot.caption = element_text(size = 15),
+        panel.border = element_blank(),
+        axis.line.x = element_line(),
+        axis.ticks = element_blank(),
+        legend.position = "none"
+      )
 
     # Save the plot
     ggsave(paste0("./assets/tsa_plots/", company_name, ".jpg"), plot,
@@ -1201,6 +1241,8 @@ portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
 
 # Call the function
 portfolio_tsa_plots(tsa_dfs_exponential_smoothing_a0_1_error_pct)
+
+# Ctrl + P > AAPL_Adjusted_tsa.jpg
 
 
 # *** TIME SERIES FORECASTING *** ---------------------------------------------
