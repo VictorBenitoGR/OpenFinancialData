@@ -340,89 +340,93 @@ list2env(tsa_dfs, envir = .GlobalEnv)
 # View(AAPL.Adjusted_tsa)
 class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 
-# *** FUNCTION | last_data_cols *** -------------------------------------------
 
-# Creates a column for the method
-last_data_cols <- function(df) {
-  # Create the "last_data" columns
-  last_data <- df %>%
-    mutate(across(everything(), lag, .names = "{.col}_last_data"))
+# # *** FUNCTION | last_data_cols *** ------------------------------------------
+# ! Not useful at all
 
-  # Get the names of the original and 'last_data' columns
-  original_cols <- names(df)
-  last_data_cols <- grep("_last_data$", names(last_data), value = TRUE)
+# # Creates a column for the method
+# last_data_cols <- function(df) {
+#   # Create the "last_data" columns
+#   last_data <- df %>%
+#     mutate(across(everything(), lag, .names = "{.col}_last_data"))
 
-  # Interleave the names of the original and 'last_data' columns
-  column_order <- c(rbind(
-    matrix(original_cols, nrow = 1),
-    matrix(last_data_cols, nrow = 1)
-  ))
+#   # Get the names of the original and 'last_data' columns
+#   original_cols <- names(df)
+#   last_data_cols <- grep("_last_data$", names(last_data), value = TRUE)
 
-  # Reorder the columns in the 'last_data' dataframe
-  last_data <- last_data[, column_order]
+#   # Interleave the names of the original and 'last_data' columns
+#   column_order <- c(rbind(
+#     matrix(original_cols, nrow = 1),
+#     matrix(last_data_cols, nrow = 1)
+#   ))
 
-  # Return the modified dataframe
-  return(last_data)
-}
+#   # Reorder the columns in the 'last_data' dataframe
+#   last_data <- last_data[, column_order]
 
-# Apply the function to each dataframe
-tsa_dfs_last_data <- lapply(tsa_dfs, last_data_cols)
+#   # Return the modified dataframe
+#   return(last_data)
+# }
 
-# Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_last_data, envir = .GlobalEnv)
+# # Apply the function to each dataframe
+# tsa_dfs_last_data <- lapply(tsa_dfs, last_data_cols)
 
-# View(AAPL.Adjusted_tsa)
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_last_data, envir = .GlobalEnv)
 
-
-# *** FUNCTION | last_data_error_cols *** -------------------------------------
-
-# Creates a column for the method
-last_data_error_cols <- function(df) {
-  # Get the names of the first two columns
-  col1 <- names(df)[1]
-  col2 <- names(df)[2]
-
-  # Create the 'last_data_error' column
-  df[[paste0(col1, "_last_data_error")]] <- abs(df[[col1]] - df[[col2]])
-
-  # Return the modified dataframe
-  return(df)
-}
-
-# Apply the function to each dataframe
-tsa_dfs_last_data_error <- lapply(tsa_dfs_last_data, last_data_error_cols)
-
-# Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_last_data_error, envir = .GlobalEnv)
-
-# View(AAPL.Adjusted_tsa)
+# # View(AAPL.Adjusted_tsa)
 
 
-# *** FUNCTION | last_data_error_pct_cols *** ---------------------------------
+# # *** FUNCTION | last_data_error_cols *** ------------------------------------
+# ! Not useful at all
 
-# Define a function to create 'last_data_error_pct' columns
-last_data_error_pct_cols <- function(df) {
-  # Get the name of the original column
-  original_col <- names(df)[1]
+# # Creates a column for the method
+# last_data_error_cols <- function(df) {
+#   # Get the names of the first two columns
+#   col1 <- names(df)[1]
+#   col2 <- names(df)[2]
 
-  # Create the 'last_data_error_pct' column
-  df[[paste0(original_col, "_last_data_error_pct")]] <-
-    abs((df[[original_col]] - df[[paste0(original_col, "_last_data")]]) /
-      df[[original_col]]) * 100
+#   # Create the 'last_data_error' column
+#   df[[paste0(col1, "_last_data_error")]] <- abs(df[[col1]] - df[[col2]])
 
-  # Return the modified dataframe
-  return(df)
-}
+#   # Return the modified dataframe
+#   return(df)
+# }
 
-# Apply the function to each dataframe
-tsa_dfs_last_data_error_pct <- lapply(
-  tsa_dfs_last_data_error, last_data_error_pct_cols
-)
+# # Apply the function to each dataframe
+# tsa_dfs_last_data_error <- lapply(tsa_dfs_last_data, last_data_error_cols)
 
-# Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_last_data_error_pct, envir = .GlobalEnv)
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_last_data_error, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# # View(AAPL.Adjusted_tsa)
+
+
+# # *** FUNCTION | last_data_error_pct_cols *** ---------------------------------
+# ! Not useful at all
+
+# # Define a function to create 'last_data_error_pct' columns
+# last_data_error_pct_cols <- function(df) {
+#   # Get the name of the original column
+#   original_col <- names(df)[1]
+
+#   # Create the 'last_data_error_pct' column
+#   df[[paste0(original_col, "_last_data_error_pct")]] <-
+#     abs((df[[original_col]] - df[[paste0(original_col, "_last_data")]]) /
+#       df[[original_col]]) * 100
+
+#   # Return the modified dataframe
+#   return(df)
+# }
+
+# # Apply the function to each dataframe
+# tsa_dfs_last_data_error_pct <- lapply(
+#   tsa_dfs_last_data_error, last_data_error_pct_cols
+# )
+
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_last_data_error_pct, envir = .GlobalEnv)
+
+# # View(AAPL.Adjusted_tsa)
 
 
 # *** FUNCTION | simple_average_cols *** --------------------------------------
@@ -442,7 +446,7 @@ simple_average_cols <- function(df) {
 
 # Apply the function to each dataframe
 tsa_dfs_simple_average <- lapply(
-  tsa_dfs_last_data_error_pct, simple_average_cols
+  tsa_dfs, simple_average_cols
 )
 
 # Create variables in your environment for each dataframe in the list
@@ -934,90 +938,93 @@ list2env(tsa_dfs_exponential_smoothing_a0_1_error_pct, envir = .GlobalEnv)
 View(AAPL.Adjusted_tsa)
 
 
-# *** FUNCTION | exponential_smoothing_a0.9_cols *** --------------------------
+# # *** FUNCTION | exponential_smoothing_a0.9_cols *** -------------------------
+## ! Surprisingly bad!!!
 
-# Define a function to create 'exponential_smoothing_a0.9' columns
-exponential_smoothing_a0_9_cols <- function(df) {
-  # Get the name of the original column
-  original_col <- names(df)[1]
+# # Define a function to create 'exponential_smoothing_a0.9' columns
+# exponential_smoothing_a0_9_cols <- function(df) {
+#   # Get the name of the original column
+#   original_col <- names(df)[1]
 
-  # Create the 'exponential_smoothing_a0.9' column
-  df[[paste0(original_col, "_exponential_smoothing_a0.9")]] <-
-    stats::filter(df[[original_col]], filter = 0.9, method = "recursive")
+#   # Create the 'exponential_smoothing_a0.9' column
+#   df[[paste0(original_col, "_exponential_smoothing_a0.9")]] <-
+#     stats::filter(df[[original_col]], filter = 0.9, method = "recursive")
 
-  # Return the modified dataframe
-  return(df)
-}
+#   # Return the modified dataframe
+#   return(df)
+# }
 
-# Apply the function to each dataframe
-tsa_dfs_exponential_smoothing_a0_9 <- lapply(
-  tsa_dfs_exponential_smoothing_a0_1_error_pct,
-  exponential_smoothing_a0_9_cols
-)
+# # Apply the function to each dataframe
+# tsa_dfs_exponential_smoothing_a0_9 <- lapply(
+#   tsa_dfs_exponential_smoothing_a0_1_error_pct,
+#   exponential_smoothing_a0_9_cols
+# )
 
-# Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_exponential_smoothing_a0_9, envir = .GlobalEnv)
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_exponential_smoothing_a0_9, envir = .GlobalEnv)
+
+# # View(AAPL.Adjusted_tsa)
+
+
+# # *** FUNCTION | exponential_smoothing_a0.9_error_cols *** -------------------
+## ! Surprisingly bad!!!
+
+# # Define a function to create 'exponential_smoothing_a0.9_error' columns
+# exponential_smoothing_a0_9_error_cols <- function(df) {
+#   # Get the name of the original column
+#   original_col <- names(df)[1]
+
+#   # Create the 'exponential_smoothing_a0.9_error' column
+#   df[[paste0(original_col, "_exponential_smoothing_a0.9_error")]] <-
+#     abs(df[[original_col]] - df[[paste0(
+#       original_col, "_exponential_smoothing_a0.9"
+#     )]])
+
+#   # Return the modified dataframe
+#   return(df)
+# }
+
+# # Apply the function to each dataframe
+# tsa_dfs_exponential_smoothing_a0_9_error <- lapply(
+#   tsa_dfs_exponential_smoothing_a0_9, exponential_smoothing_a0_9_error_cols
+# )
+
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_exponential_smoothing_a0_9_error, envir = .GlobalEnv)
+
+# # View(AAPL.Adjusted_tsa)
+
+
+# # *** FUNCTION | exponential_smoothing_a0.9_error_pct_cols *** ---------------
+## ! Surprisingly bad!!!
+
+# # Define a function to create 'exponential_smoothing_a0.9_error_pct' columns
+# exponential_smoothing_a0_9_error_pct_cols <- function(df) {
+#   # Get the name of the original column
+#   original_col <- names(df)[1]
+
+#   # Create the 'exponential_smoothing_a0.9_error_pct' column
+#   df[[paste0(original_col, "_exponential_smoothing_a0.9_error_pct")]] <-
+#     abs((df[[original_col]] -
+#       df[[paste0(original_col, "_exponential_smoothing_a0.9")]]) /
+#       df[[original_col]]) * 100
+
+#   # Return the modified dataframe
+#   return(df)
+# }
+
+# # Apply the function to each dataframe
+# tsa_dfs_exponential_smoothing_a0_9_error_pct <- lapply(
+#   tsa_dfs_exponential_smoothing_a0_9_error,
+#   exponential_smoothing_a0_9_error_pct_cols
+# )
+
+# # Create variables in your environment for each dataframe in the list
+# list2env(tsa_dfs_exponential_smoothing_a0_9_error_pct, envir = .GlobalEnv)
 
 # View(AAPL.Adjusted_tsa)
 
-
-# *** FUNCTION | exponential_smoothing_a0.9_error_cols *** --------------------
-
-# Define a function to create 'exponential_smoothing_a0.9_error' columns
-exponential_smoothing_a0_9_error_cols <- function(df) {
-  # Get the name of the original column
-  original_col <- names(df)[1]
-
-  # Create the 'exponential_smoothing_a0.9_error' column
-  df[[paste0(original_col, "_exponential_smoothing_a0.9_error")]] <-
-    abs(df[[original_col]] - df[[paste0(
-      original_col, "_exponential_smoothing_a0.9"
-    )]])
-
-  # Return the modified dataframe
-  return(df)
-}
-
-# Apply the function to each dataframe
-tsa_dfs_exponential_smoothing_a0_9_error <- lapply(
-  tsa_dfs_exponential_smoothing_a0_9, exponential_smoothing_a0_9_error_cols
-)
-
-# Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_exponential_smoothing_a0_9_error, envir = .GlobalEnv)
-
-# View(AAPL.Adjusted_tsa)
-
-
-# *** FUNCTION | exponential_smoothing_a0.9_error_pct_cols *** ----------------
-
-# Define a function to create 'exponential_smoothing_a0.9_error_pct' columns
-exponential_smoothing_a0_9_error_pct_cols <- function(df) {
-  # Get the name of the original column
-  original_col <- names(df)[1]
-
-  # Create the 'exponential_smoothing_a0.9_error_pct' column
-  df[[paste0(original_col, "_exponential_smoothing_a0.9_error_pct")]] <-
-    abs((df[[original_col]] -
-      df[[paste0(original_col, "_exponential_smoothing_a0.9")]]) /
-      df[[original_col]]) * 100
-
-  # Return the modified dataframe
-  return(df)
-}
-
-# Apply the function to each dataframe
-tsa_dfs_exponential_smoothing_a0_9_error_pct <- lapply(
-  tsa_dfs_exponential_smoothing_a0_9_error,
-  exponential_smoothing_a0_9_error_pct_cols
-)
-
-# Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_exponential_smoothing_a0_9_error_pct, envir = .GlobalEnv)
-
-View(AAPL.Adjusted_tsa)
-
-# View(NVDA.Adjusted_tsa)
+# # View(NVDA.Adjusted_tsa)
 
 
 # *** FUNCTION | arima_cols *** -----------------------------------------------
@@ -1049,7 +1056,7 @@ View(AAPL.Adjusted_tsa)
 
 # # Apply the function to each dataframe in 'tsa_dfs_exponential_smoothing_a0_9'
 # tsa_dfs_arima <- lapply(
-#   tsa_dfs_exponential_smoothing_a0_9_error_pct, arima_cols
+#   tsa_dfs_exponential_smoothing_a0_1_error_pct, arima_cols
 # )
 
 # # Create variables in your environment for each dataframe in the list
@@ -1058,73 +1065,142 @@ View(AAPL.Adjusted_tsa)
 # View(AAPL.Adjusted_tsa)
 
 
-# *** portfolio_tsa
+# *** VISUALIZE DIFFERENCES *** ------------------------------------------------
+
+# Get the data for AAPL
+df <- AAPL.Adjusted_tsa
+
+# Convert the data to long format for plotting
+df_long <- df %>%
+  mutate(Date = row_number()) %>%
+  pivot_longer(
+    cols = c(1, 2, 5, 8, 11, 14, 17),
+    names_to = "Variable",
+    values_to = "Value"
+  )
+
+# Create the plot
+visualize_differences <- ggplot(df_long, aes(
+  x = Date, y = Value, color = Variable
+)) +
+  geom_line(linewidth = 0.5, aes(linetype = Variable == names(df)[1])) +
+  scale_linetype_manual(values = c("solid", rep("dashed", 7)), guide = "none") +
+  scale_color_manual(values = c(
+    "red", "blue", "green", "orange",
+    "purple", "yellow", "brown", "pink"
+  )) +
+  labs(x = "Date", y = "Value", color = "Variable") +
+  theme_linedraw()
+
+# Save the plot
+ggsave("./assets/tsa_plots/differences.jpg", visualize_differences,
+  width = 16, height = 9
+)
+
+
+# *** FUNCTION | portfolio_tsa *** -------------------------------------------
 
 colnames(AAPL.Adjusted_tsa)
+
 # Initialize an empty dataframe
-portfolio_tsa <- data.frame(matrix(ncol = 9, nrow = 0))
+portfolio_tsa <- data.frame(matrix(ncol = 7, nrow = 0))
 
 # Define the column names
 colnames(portfolio_tsa) <- c(
-  "company", "last_data_error_pct", "simple_average_error_pct",
-  "moving_average_n50_error_pct", "moving_average_n200_error_pct",
-  "weighted_moving_average_n50_error_pct",
+  "company", "simple_average_error_pct", "moving_average_n50_error_pct",
+  "moving_average_n200_error_pct", "weighted_moving_average_n50_error_pct",
   "weighted_moving_average_n200_error_pct",
-  "exponential_smoothing_a0.1_error_pct",
-  "exponential_smoothing_a0.9_error_pct"
+  "exponential_smoothing_a0.1_error_pct"
 )
 
 # Initialize a vector to store the overall averages for each method
-overall_averages <- numeric(8)
+overall_averages <- numeric(6)
 
 # Fill the dataframe
-for (i in 1:length(tsa_dfs_exponential_smoothing_a0_9_error_pct)) {
-  company_name <- names(tsa_dfs_exponential_smoothing_a0_9_error_pct)[i]
-  df <- tsa_dfs_exponential_smoothing_a0_9_error_pct[[i]]
+for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
+  company_name <- names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]
+  df <- tsa_dfs_exponential_smoothing_a0_1_error_pct[[i]]
 
   portfolio_tsa[i, "company"] <- company_name
-  portfolio_tsa[i, "last_data_error_pct"] <-
-    mean(df[[4]], na.rm = TRUE)
   portfolio_tsa[i, "simple_average_error_pct"] <-
-    mean(df[[7]], na.rm = TRUE)
+    mean(df[[3]], na.rm = TRUE)
   portfolio_tsa[i, "moving_average_n50_error_pct"] <-
-    mean(df[[10]], na.rm = TRUE)
+    mean(df[[6]], na.rm = TRUE)
   portfolio_tsa[i, "moving_average_n200_error_pct"] <-
-    mean(df[[13]], na.rm = TRUE)
+    mean(df[[9]], na.rm = TRUE)
   portfolio_tsa[i, "weighted_moving_average_n50_error_pct"] <-
-    mean(df[[16]], na.rm = TRUE)
+    mean(df[[12]], na.rm = TRUE)
   portfolio_tsa[i, "weighted_moving_average_n200_error_pct"] <-
-    mean(df[[19]], na.rm = TRUE)
-  portfolio_tsa[i, "exponential_smoothing_a0.1_error_pct"] <-
-    mean(df[[22]], na.rm = TRUE)
-  portfolio_tsa[i, "exponential_smoothing_a0.9_error_pct"] <-
-    mean(df[[25]], na.rm = TRUE)
+    mean(df[[15]], na.rm = TRUE)
+  portfolio_tsa[i, "exponential_smoothing_a0.1_error_pct"] <
+    mean(df[[18]], na.rm = TRUE)
 
-  # Print the best method for this company, ignoring the "last_data_error_pct"
-  best_method <- which.min(portfolio_tsa[i, 3:9])
-  best_value <- portfolio_tsa[i, best_method + 2]
+  # Print the best method for this company
+  best_method <- which.min(portfolio_tsa[i, 2:7])
+  best_value <- portfolio_tsa[i, best_method + 1]
   print(paste(
     "Best method for", company_name,
-    "is", colnames(portfolio_tsa)[best_method + 2],
+    "is", colnames(portfolio_tsa)[best_method + 1],
     "with an average error of", best_value
   ))
 
-  # Add the averages to the overall averages, ignoring the "last_data_error_pct"
-  overall_averages <- overall_averages + portfolio_tsa[i, 3:9]
+  # Add the averages to the overall averages
+  overall_averages <- overall_averages + portfolio_tsa[i, 2:7]
 }
 
 # Calculate the overall averages
 overall_averages <- overall_averages /
-  length(tsa_dfs_exponential_smoothing_a0_9_error_pct)
+  length(tsa_dfs_exponential_smoothing_a0_1_error_pct)
 
-# Print the overall best method, ignoring the "last_data_error_pct" column
+# Print the overall best method
 overall_best_method <- which.min(overall_averages)
 print(paste(
-  "Overall best method is", colnames(portfolio_tsa)[overall_best_method + 2],
+  "Overall best method is", colnames(portfolio_tsa)[overall_best_method + 1],
   "with an average error of", overall_averages[overall_best_method]
 ))
+
 View(portfolio_tsa)
 
+
+# *** FUNCTION | portfolio_tsa_plots *** --------------------------------------
+# ? Uses ggplot2 and tidyr
+
+portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
+  for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
+    df <- tsa_dfs_exponential_smoothing_a0_1_error_pct[[i]]
+    company_name <- names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]
+
+    # Determine the best method
+    all_columns <- seq(3, ncol(df), by = 3) # Adjust this as per your data
+    avg_errors <- colMeans(df[, all_columns], na.rm = TRUE)
+    best_method <- order(avg_errors)[1]
+    best_method_column <- all_columns[best_method] - 1 # Use the column before the best method
+
+    # Convert the data to long format for plotting
+    df_long <- df %>%
+      mutate(Date = as.Date(rownames(df))) %>% # Get the dates from the row names
+      pivot_longer(
+        cols = c(1, best_method_column),
+        names_to = "Variable",
+        values_to = "Value"
+      )
+
+    # Create the plot
+    plot <- ggplot(df_long, aes(x = Date, y = Value, color = Variable)) +
+      geom_line() +
+      scale_color_manual(values = c("darkred", "red")) +
+      labs(x = "Date", y = "Value", color = "Variable") +
+      theme_minimal()
+
+    # Save the plot
+    ggsave(paste0("./assets/tsa_plots/", company_name, ".jpg"), plot,
+      width = 16, height = 9
+    )
+  }
+}
+
+# Call the function
+portfolio_tsa_plots(tsa_dfs_exponential_smoothing_a0_1_error_pct)
 
 
 # *** TIME SERIES FORECASTING *** ---------------------------------------------
