@@ -342,9 +342,9 @@ class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 
 # *** FUNCTION | last_data_cols *** -------------------------------------------
 
-# Define a function to create 'last_data' columns
+# Creates a column for the method
 last_data_cols <- function(df) {
-  # Create the 'last_data' columns
+  # Create the "last_data" columns
   last_data <- df %>%
     mutate(across(everything(), lag, .names = "{.col}_last_data"))
 
@@ -376,7 +376,7 @@ list2env(tsa_dfs_last_data, envir = .GlobalEnv)
 
 # *** FUNCTION | last_data_error_cols *** -------------------------------------
 
-# Define a function to create 'last_data_error' columns
+# Creates a column for the method
 last_data_error_cols <- function(df) {
   # Get the names of the first two columns
   col1 <- names(df)[1]
@@ -787,7 +787,7 @@ weighted_moving_average_n200_cols <- function(df) {
 
 # Apply the function to each dataframe
 tsa_dfs_weighted_moving_average_n200 <- lapply(
-  tsa_dfs_moving_average_n50_error_pct, weighted_moving_average_n200_cols
+  tsa_dfs_weighted_moving_average_n50_error_pct, weighted_moving_average_n200_cols
 )
 
 # Create variables in your environment for each dataframe in the list
@@ -1015,7 +1015,7 @@ tsa_dfs_exponential_smoothing_a0_9_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_exponential_smoothing_a0_9_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+View(AAPL.Adjusted_tsa)
 
 # View(NVDA.Adjusted_tsa)
 
@@ -1056,6 +1056,74 @@ list2env(tsa_dfs_exponential_smoothing_a0_9_error_pct, envir = .GlobalEnv)
 # list2env(tsa_dfs_arima, envir = .GlobalEnv)
 
 # View(AAPL.Adjusted_tsa)
+
+
+# *** portfolio_tsa
+
+colnames(AAPL.Adjusted_tsa)
+# Initialize an empty dataframe
+portfolio_tsa <- data.frame(matrix(ncol = 9, nrow = 0))
+
+# Define the column names
+colnames(portfolio_tsa) <- c(
+  "company", "last_data_error_pct", "simple_average_error_pct",
+  "moving_average_n50_error_pct", "moving_average_n200_error_pct",
+  "weighted_moving_average_n50_error_pct",
+  "weighted_moving_average_n200_error_pct",
+  "exponential_smoothing_a0.1_error_pct",
+  "exponential_smoothing_a0.9_error_pct"
+)
+
+# Initialize a vector to store the overall averages for each method
+overall_averages <- numeric(8)
+
+# Fill the dataframe
+for (i in 1:length(tsa_dfs_exponential_smoothing_a0_9_error_pct)) {
+  company_name <- names(tsa_dfs_exponential_smoothing_a0_9_error_pct)[i]
+  df <- tsa_dfs_exponential_smoothing_a0_9_error_pct[[i]]
+
+  portfolio_tsa[i, "company"] <- company_name
+  portfolio_tsa[i, "last_data_error_pct"] <-
+    mean(df[[4]], na.rm = TRUE)
+  portfolio_tsa[i, "simple_average_error_pct"] <-
+    mean(df[[7]], na.rm = TRUE)
+  portfolio_tsa[i, "moving_average_n50_error_pct"] <-
+    mean(df[[10]], na.rm = TRUE)
+  portfolio_tsa[i, "moving_average_n200_error_pct"] <-
+    mean(df[[13]], na.rm = TRUE)
+  portfolio_tsa[i, "weighted_moving_average_n50_error_pct"] <-
+    mean(df[[16]], na.rm = TRUE)
+  portfolio_tsa[i, "weighted_moving_average_n200_error_pct"] <-
+    mean(df[[19]], na.rm = TRUE)
+  portfolio_tsa[i, "exponential_smoothing_a0.1_error_pct"] <-
+    mean(df[[22]], na.rm = TRUE)
+  portfolio_tsa[i, "exponential_smoothing_a0.9_error_pct"] <-
+    mean(df[[25]], na.rm = TRUE)
+
+  # Print the best method for this company, ignoring the "last_data_error_pct"
+  best_method <- which.min(portfolio_tsa[i, 3:9])
+  best_value <- portfolio_tsa[i, best_method + 2]
+  print(paste(
+    "Best method for", company_name,
+    "is", colnames(portfolio_tsa)[best_method + 2],
+    "with an average error of", best_value
+  ))
+
+  # Add the averages to the overall averages, ignoring the "last_data_error_pct"
+  overall_averages <- overall_averages + portfolio_tsa[i, 3:9]
+}
+
+# Calculate the overall averages
+overall_averages <- overall_averages /
+  length(tsa_dfs_exponential_smoothing_a0_9_error_pct)
+
+# Print the overall best method, ignoring the "last_data_error_pct" column
+overall_best_method <- which.min(overall_averages)
+print(paste(
+  "Overall best method is", colnames(portfolio_tsa)[overall_best_method + 2],
+  "with an average error of", overall_averages[overall_best_method]
+))
+View(portfolio_tsa)
 
 
 
