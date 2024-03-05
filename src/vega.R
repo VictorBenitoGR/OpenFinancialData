@@ -184,6 +184,7 @@ benchmark_close <- do.call(cbind, benchmark_close)
 benchmark_volume <- do.call(cbind, benchmark_volume)
 benchmark_adjusted <- do.call(cbind, benchmark_adjusted)
 
+
 # * T-bills
 # Use lapply to convert each xts object to a data frame
 tbills_df <- lapply(tbills, xts_to_df)
@@ -200,6 +201,7 @@ tbills_df$DGS3MO <- as.numeric(tbills_df$DGS3MO) / 100
 class(tbills_df$DGS3MO) # ! Has to be numeric!
 
 View(tbills_df)
+
 
 
 # *** FUNCTION | tbills_metrics *** -------------------------------------------
@@ -219,7 +221,7 @@ risk_free_rate <- tbills_metrics(tbills_df)
 View(risk_free_rate)
 
 
-# *** FUNCTION | benchmark_metrics *** -------------------------------------------
+# *** FUNCTION | benchmark_metrics *** -----------------------------------------
 
 # Function to calculate the market average
 benchmark_metrics <- function(df) {
@@ -230,6 +232,7 @@ benchmark_metrics <- function(df) {
   return(market_average)
 }
 View(benchmark_adjusted)
+
 # Calculate the market average
 market_average <- benchmark_metrics(benchmark_adjusted)
 
@@ -286,7 +289,7 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
 
   sharpe <- (average - risk_free_rate) / std_deviation
 
-  tryenor <- (average - risk_free_rate) / betas
+  treynor <- (average - risk_free_rate) / betas
 
   # ? Alpha = R(i) - (R(f) + B * (R(m) - R(f)))
   # ? where:
@@ -301,7 +304,7 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
 
   # Metrics for each ticker
   metrics <- data.frame(
-    average, variance, std_deviation, betas, r_squared, sharpe, tryenor
+    average, variance, std_deviation, betas, r_squared, sharpe, treynor
     # , jensen_aplha
   )
 
@@ -338,36 +341,15 @@ portfolio_close_metrics <- portfolio_metrics(
   portfolio_close, benchmark_adjusted
 )
 
-portfolio_volume_metrics <- portfolio_metrics(
-  portfolio_volume, benchmark_adjusted
-)
+# portfolio_volume_metrics <- portfolio_metrics(
+#   portfolio_volume, benchmark_adjusted
+# )
 
 portfolio_adjusted_metrics <- portfolio_metrics(
   portfolio_adjusted, benchmark_adjusted
 )
 
 View(portfolio_adjusted_metrics)
-
-head(portfolio_adjusted_metrics)
-
-# *** FUNCTION | weights *** --------------------------------------------------
-# ? Uses PortfolioAnalytics package
-
-# Create a new portfolio specification
-portf <- portfolio.spec(assets = colnames(portfolio_adjusted_metrics))
-
-# Add constraints
-portf <- add.constraint(portfolio = portf, type = "full_investment")
-
-# Add objective
-portf <- add.objective(portfolio = portf, type = "return", name = "mean")
-portf <- add.objective(portfolio = portf, type = "risk", name = "StdDev")
-
-# Optimize the portfolio
-optimal_portfolio <- optimize.portfolio(R = portfolio_adjusted_metrics, portfolio = portf, optimize_method = "ROI")
-
-# Get the weights of the optimal portfolio
-weights <- optimal_portfolio$weights
 
 
 # *** SPLIT DATAFRAMES *** ----------------------------------------------------
@@ -1283,9 +1265,14 @@ portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
       labs(x = "Date", y = "Value", color = "Variable") +
       ggtitle(paste(company_title, "Time Series Analysis")) +
       labs(
-        subtitle = paste("Evolution of", best_method_name, " (red) over the last 5 years."), # nolint: line_length_linter.
+        subtitle = paste(
+          "Evolution of", best_method_name, " (red) over the last 5 years."
+        ),
         y = "Adjusted Price",
-        caption = "R Plot: @VictorBenitoGR | GitHub Repository: VictorBenitoGR/OpenFinancialData" # nolint: line_length_linter.
+        caption = paste(
+          "R Plot: @VictorBenitoGR | GitHub Repository: ",
+          "VictorBenitoGR/OpenFinancialData"
+        )
       ) +
       theme_ipsum() +
       theme(
@@ -1319,6 +1306,95 @@ portfolio_tsa_plots(tsa_dfs_exponential_smoothing_a0_1_error_pct)
 
 
 
+# *** OBTAIN WEIGHTS *** ------------------------------------------------------
+
+# # Install and load the necessary packages
+# install.packages(c("PerformanceAnalytics", "PortfolioAnalytics"))
+# library(PerformanceAnalytics)
+# library(PortfolioAnalytics)
+
+# install.packages("timeDate")
+# library(timeDate)
+
+# # Install and load the timeSeries package
+# install.packages("timeSeries")
+# library(timeSeries)
+
+# head(portfolio_adjusted_metrics)
+
+# # Calculate inverse-variance weights
+# inverse_variance <- 1 / portfolio_adjusted_metrics$variance
+# weights <- inverse_variance / sum(inverse_variance)
+# View(weights)
+
+calculate_weights <- function(df) {
+  # Normalize the metrics
+  normalize <- function(x) (x - min(x)) / (max(x) - min(x))
+  average_norm <- normalize(df$average)
+
+  # Inverse normalization because lower variance is better
+  variance_norm <- 1 - normalize(df$variance)
+
+  # Inverse normalization because lower std_deviation is better
+  std_deviation_norm <- 1 - normalize(df$std_deviation)
+
+  sharpe_norm <- normalize(df$sharpe)
+
+  # Inverse normalization because lower betas is better
+  betas_norm <- 1 - normalize(df$betas)
+
+  r_squared_norm <- normalize(df$r_squared)
+  treynor_norm <- normalize(df$treynor)
+
+  # Calculate scores for each profile
+  score_risk <- rowMeans(cbind(
+    average_norm, sharpe_norm, betas_norm, r_squared_norm, treynor_norm
+  )) # Higher risk, higher return
+  score_moderate <- rowMeans(cbind(
+    average_norm, variance_norm, std_deviation_norm, sharpe_norm,
+    betas_norm, r_squared_norm, treynor_norm
+  )) # Balanced
+  score_conservative <- rowMeans(cbind(
+    variance_norm, std_deviation_norm, betas_norm, r_squared_norm
+  )) # Lower risk
+
+  # Calculate weights
+  weights_risk <- score_risk / sum(score_risk)
+  weights_moderate <- score_moderate / sum(score_moderate)
+  weights_conservative <- score_conservative / sum(score_conservative)
+
+  # Add weights as the new second column
+  df_risk <- cbind(
+    df[, 1, drop = FALSE], weights_risk, df[, -1]
+  )
+  df_moderate <- cbind(
+    df[, 1, drop = FALSE], weights_moderate, df[, -1]
+  )
+  df_conservative <- cbind(
+    df[, 1, drop = FALSE], weights_conservative, df[, -1]
+  )
+
+  return(list(
+    risk = df_risk, moderate = df_moderate, conservative = df_conservative
+  ))
+}
+
+# Use the function
+portfolio_profiles <- calculate_weights(portfolio_adjusted_metrics)
+portfolio_risk <- portfolio_profiles$risk
+portfolio_moderate <- portfolio_profiles$moderate
+portfolio_conservative <- portfolio_profiles$conservative
+
+sum(portfolio_risk$weights_risk) # ! Has to be 1
+View(portfolio_risk)
+
+sum(portfolio_moderate$weights_moderate) # ! Has to be 1
+View(portfolio_moderate)
+
+sum(portfolio_conservative$weights_conservative) # ! Has to be 1
+View(portfolio_conservative)
+
+
 # *** GET THE DATE COLUMN *** -------------------------------------------------
 
 # * You can't use the "first" column (index), use this from library(tibble)
@@ -1338,14 +1414,18 @@ benchmark_close <- rownames_to_column(benchmark_close, "Date")
 benchmark_volume <- rownames_to_column(benchmark_volume, "Date")
 benchmark_adjusted <- rownames_to_column(benchmark_adjusted, "Date")
 
+# T-bills
+tbills_df <- rownames_to_column(tbills_df, "Date")
+
 
 # *** CHARACTER TO DATE *** ---------------------------------------------------
 
 # ? You need to give Date its proper format
 class(portfolio_adjusted$Date) # character
 class(benchmark_adjusted$Date) # character
+class(tbills_df$Date) # character
 
-# * Portfolio
+# Portfolio
 portfolio_open$Date <- as.Date(portfolio_open$Date, format = "%Y-%m-%d")
 portfolio_high$Date <- as.Date(portfolio_high$Date, format = "%Y-%m-%d")
 portfolio_low$Date <- as.Date(portfolio_low$Date, format = "%Y-%m-%d")
@@ -1353,7 +1433,7 @@ portfolio_close$Date <- as.Date(portfolio_close$Date, format = "%Y-%m-%d")
 portfolio_volume$Date <- as.Date(portfolio_volume$Date, format = "%Y-%m-%d")
 portfolio_adjusted$Date <- as.Date(portfolio_adjusted$Date, format = "%Y-%m-%d")
 
-# * Benchmark
+# Benchmark
 benchmark_open$Date <- as.Date(benchmark_open$Date, format = "%Y-%m-%d")
 benchmark_high$Date <- as.Date(benchmark_high$Date, format = "%Y-%m-%d")
 benchmark_low$Date <- as.Date(benchmark_low$Date, format = "%Y-%m-%d")
@@ -1361,8 +1441,12 @@ benchmark_close$Date <- as.Date(benchmark_close$Date, format = "%Y-%m-%d")
 benchmark_volume$Date <- as.Date(benchmark_volume$Date, format = "%Y-%m-%d")
 benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 
+# T-bills
+tbills_df$Date <- as.Date(tbills_df$Date, format = "%Y-%m-%d")
+
 class(portfolio_adjusted$Date) # Date
 class(benchmark_adjusted$Date) # Date
+class(tbills_df$Date) # Date
 # TODO: Search if there's a difference with POSIXct
 
 View(portfolio_adjusted)
@@ -1384,7 +1468,8 @@ View(portfolio_adjusted)
 #   labs(
 #     subtitle = "Evolution of Apple over the last 10 years",
 #     y = "Price",
-#     caption = "R Plot: @VictorBenitoGR | GitHub Repository: VictorBenitoGR/OpenFinancialData" # nolint: line_length_linter.
+#     caption = paste("R Plot: @VictorBenitoGR | GitHub Repository:",
+#                    "VictorBenitoGR/OpenFinancialData")
 #   ) +
 #   geom_smooth(method = loess, color = "red", fill = "#69b3a2", se = TRUE) +
 #   theme_ipsum() +
@@ -1438,8 +1523,11 @@ export_to_excel <- function(file, sheet_names, dataframes, col_width = 12) {
 # Usage example
 export_to_excel(
   "./data/Portfolio_Analysis.xlsx", c(
-    "portfolio_adjusted_metrics", "portfolio_adjusted", "benchmark_adjusted"
+    "portfolio_adjusted_metrics", "portfolio_risk", "portfolio_moderate",
+    "portfolio_conservative", "portfolio_adjusted", "benchmark_adjusted",
+    "tbills"
   ), list(
-    portfolio_adjusted_metrics, portfolio_adjusted, benchmark_adjusted
+    portfolio_adjusted_metrics, portfolio_risk, portfolio_moderate,
+    portfolio_conservative, portfolio_adjusted, benchmark_adjusted, tbills_df
   )
 )
