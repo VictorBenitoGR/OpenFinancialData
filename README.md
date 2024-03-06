@@ -29,10 +29,10 @@ To clone this repository to your local machine, follow these steps:
 
 5. Open VSCode/RStudio and select the project folder.
 
-6. You can find the main R file on ./src!
+6. You can find the main R files on ./src!
 
 ## VEGA (Visualization and Evaluation of Global Accounting)
-This module seeks to automate financial statement analysis, allowing to visualize the evolution of public companies listed on the SEC (US, through the EDGAR system) and BMV/BIVA (Mexico, DataBursatil API). 
+This module seeks to automate financial statement analysis, allowing to visualize the evolution of public companies listed on the SEC (US, through the EDGAR system) and BMV/BIVA (Mexico, DataBursatil API).
 
 Its ultimate goal is to simplify the insertion of any company into the formal economy and even achieve its IPO.
 
