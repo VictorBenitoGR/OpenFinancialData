@@ -7,6 +7,30 @@ I started this project during my university career at Tecnologico de Monterrey (
 
 ![L'Oréal and MSCI](./assets/README/loreal_and_msci_itesm.png "L'Oréal and MSCI")
 
+## Clone Repository
+
+To clone this repository to your local machine, follow these steps:
+
+1. Open a terminal on your machine.
+
+2. Navigate to the directory where you want to clone the repository using the `cd` command:
+
+    ```bash
+    cd path/to/your/directory
+    ```
+
+3. Copy the clone URL of this repository by clicking on the green "Code" button on the GitHub page and copying the URL.
+
+4. In the terminal, use the `git clone` command to clone the repository:
+
+    ```bash
+    git clone https://github.com/VictorBenitoGR/OpenFinancialData.git
+    ```
+
+5. Open VSCode/RStudio and select the project folder.
+
+6. You can find the main R file on ./src!
+
 ## VEGA (Visualization and Evaluation of Global Accounting)
 This module seeks to automate financial statement analysis, allowing to visualize the evolution of public companies listed on the SEC (US, through the EDGAR system) and BMV/BIVA (Mexico, DataBursatil API). 
 
