@@ -31,29 +31,29 @@ source("./src/install_packages.R")
 # * Obtain the ticker symbols
 
 # ? Make tests with less data:
-na.omit(getSymbols(
-  c(
-    "EUSA", # Benchmark (MSCI USA Equal Weighted ETF). SP500'd be "^GSPC"
-    "AAPL", "MSFT", "NVDA", "AMZN", "META",
-    "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
-    "TMO", "JPM", "UNH", "V", "XOM",
-    "MA", "JNJ", "PG", "HD", "MRK",
-    "COST", "ABBV", "AMD", "CRM", "CVX",
-    "ADBE", "NFLX", "WMT", "KO", "BAC"
-  ),
-  src = "yahoo",
-  from = Sys.Date() - 1826, # 1826days = 5years
-  to = Sys.Date()
-))
+# na.omit(getSymbols(
+#   c(
+#     "EUSA", # Benchmark (MSCI USA Equal Weighted ETF). SP500'd be "^GSPC"
+#     "AAPL", "MSFT", "NVDA", "AMZN", "META",
+#     "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
+#     "TMO", "JPM", "UNH", "V", "XOM",
+#     "MA", "JNJ", "PG", "HD", "MRK",
+#     "COST", "ABBV", "AMD", "CRM", "CVX",
+#     "ADBE", "NFLX", "WMT", "KO", "BAC"
+#   ),
+#   src = "yahoo",
+#   from = Sys.Date() - 1826, # 1826days = 5years
+#   to = Sys.Date()
+# ))
 
-list_of_tickers <- list(
-  AAPL, MSFT, NVDA, AMZN, META,
-  GOOGL, GOOG, LLY, TSLA, AVGO,
-  TMO, JPM, UNH, V, XOM,
-  MA, JNJ, PG, HD, MRK,
-  COST, ABBV, AMD, CRM, CVX,
-  ADBE, NFLX, WMT, KO, BAC
-)
+# list_of_tickers <- list(
+#   AAPL, MSFT, NVDA, AMZN, META,
+#   GOOGL, GOOG, LLY, TSLA, AVGO,
+#   TMO, JPM, UNH, V, XOM,
+#   MA, JNJ, PG, HD, MRK,
+#   COST, ABBV, AMD, CRM, CVX,
+#   ADBE, NFLX, WMT, KO, BAC
+# )
 
 # * Portfolio (to start, I'm only considering SP500 companies)
 # Run "which python3" (Linux/macOS) or "where python" (Windows) with your
@@ -80,6 +80,12 @@ list_of_tickers <- lapply(sp500$Symbol, function(symbol) {
   return(data)
 })
 
+# Change the column names that contain "-" to "_" (naming convention)
+list_of_tickers <- lapply(list_of_tickers, function(xts_obj) {
+  colnames(xts_obj) <- gsub("-", "_", colnames(xts_obj))
+  return(xts_obj)
+})
+
 # * Benchmark (MSCI USA Equal Weighted ETF). SP500'd be "^GSPC"
 na.omit(getSymbols(
   "EUSA",
@@ -102,8 +108,6 @@ benchmark <- list(EUSA)
 # T-bills, necessary to get the Sharpe ratio
 tbills <- list(DGS3MO)
 
-# *** REMOVE NAS ***
-
 
 # *** FUNCTIONS | SPLIT BY TYPES *** ------------------------------------------
 
@@ -113,6 +117,8 @@ tbills <- list(DGS3MO)
 # ? Close (C): The price of the asset at the end of the trading period.
 # ? Volume (V): The total number of shares or contracts traded.
 # ? Adjusted (Adj or Adjusted): Price after accounting for any corporate actions
+
+# TODO: Optimize
 
 # * Function to select columns containing the word "Open"
 open_price <- function(df) {
@@ -181,15 +187,121 @@ xts_to_df <- function(xts_object) {
 
 
 # *** XTS TO DF *** -----------------------------------------------------------
-# ! Optimize
-# * Portfolio
-# Convert each xts object to a data frame
+# TODO: Optimize
 
+# * - Portfolio -
+
+# * Open
+# Convert each xts object to a data frame
 portfolio_open <- lapply(portfolio_open, xts_to_df)
+
+# Find the maximum number of rows
+max_rows <- max(sapply(portfolio_open, nrow))
+
+portfolio_open <- lapply(portfolio_open, function(df) {
+  if (nrow(df) < max_rows) {
+    # Create a data frame with NA values for the missing rows
+    na_df <- data.frame(matrix(NA, ncol = ncol(df), nrow = max_rows - nrow(df)))
+    names(na_df) <- names(df)
+
+    # Prepend the NA rows to df
+    df <- rbind(na_df, df)
+  }
+  return(df)
+})
+
+# Obtain the data frame
+portfolio_open <- do.call(cbind, portfolio_open)
+
+# * High
+# Convert each xts object to a data frame
 portfolio_high <- lapply(portfolio_high, xts_to_df)
+
+# Find the maximum number of rows
+max_rows <- max(sapply(portfolio_high, nrow))
+
+portfolio_high <- lapply(portfolio_high, function(df) {
+  if (nrow(df) < max_rows) {
+    # Create a data frame with NA values for the missing rows
+    na_df <- data.frame(matrix(NA, ncol = ncol(df), nrow = max_rows - nrow(df)))
+    names(na_df) <- names(df)
+
+    # Prepend the NA rows to df
+    df <- rbind(na_df, df)
+  }
+  return(df)
+})
+
+# Obtain the data frame
+portfolio_high <- do.call(cbind, portfolio_high)
+
+# * Low
+# Convert each xts object to a data frame
 portfolio_low <- lapply(portfolio_low, xts_to_df)
+
+# Find the maximum number of rows
+max_rows <- max(sapply(portfolio_low, nrow))
+
+portfolio_low <- lapply(portfolio_low, function(df) {
+  if (nrow(df) < max_rows) {
+    # Create a data frame with NA values for the missing rows
+    na_df <- data.frame(matrix(NA, ncol = ncol(df), nrow = max_rows - nrow(df)))
+    names(na_df) <- names(df)
+
+    # Prepend the NA rows to df
+    df <- rbind(na_df, df)
+  }
+  return(df)
+})
+
+# Obtain the data frame
+portfolio_low <- do.call(cbind, portfolio_low)
+
+# * Close
+# Convert each xts object to a data frame
 portfolio_close <- lapply(portfolio_close, xts_to_df)
+
+# Find the maximum number of rows
+max_rows <- max(sapply(portfolio_close, nrow))
+
+portfolio_close <- lapply(portfolio_close, function(df) {
+  if (nrow(df) < max_rows) {
+    # Create a data frame with NA values for the missing rows
+    na_df <- data.frame(matrix(NA, ncol = ncol(df), nrow = max_rows - nrow(df)))
+    names(na_df) <- names(df)
+
+    # Prepend the NA rows to df
+    df <- rbind(na_df, df)
+  }
+  return(df)
+})
+
+# Obtain the data frame
+portfolio_close <- do.call(cbind, portfolio_close)
+
+# * Volume
 portfolio_volume <- lapply(portfolio_volume, xts_to_df)
+
+# Find the maximum number of rows
+max_rows <- max(sapply(portfolio_volume, nrow))
+
+portfolio_volume <- lapply(portfolio_volume, function(df) {
+  if (nrow(df) < max_rows) {
+    # Create a data frame with NA values for the missing rows
+    na_df <- data.frame(matrix(NA, ncol = ncol(df), nrow = max_rows - nrow(df)))
+    names(na_df) <- names(df)
+
+    # Prepend the NA rows to df
+    df <- rbind(na_df, df)
+  }
+  return(df)
+})
+
+# Obtain the data frame
+portfolio_volume <- do.call(cbind, portfolio_volume)
+
+# * Adjusted
+# Convert each xts object to a data frame
 portfolio_adjusted <- lapply(portfolio_adjusted, xts_to_df)
 
 # Find the maximum number of rows
@@ -197,122 +309,19 @@ max_rows <- max(sapply(portfolio_adjusted, nrow))
 
 portfolio_adjusted <- lapply(portfolio_adjusted, function(df) {
   if (nrow(df) < max_rows) {
-    # Create a data frame with NA values and correct column names
+    # Create a data frame with NA values for the missing rows
     na_df <- data.frame(matrix(NA, ncol = ncol(df), nrow = max_rows - nrow(df)))
     names(na_df) <- names(df)
 
-    # Add the NA rows to df
-    df <- rbind(df, na_df)
+    # Prepend the NA rows to df
+    df <- rbind(na_df, df)
   }
   return(df)
 })
 
-# Combine the data frames into a single data frame
-portfolio_open <- do.call(cbind, portfolio_open)
-portfolio_high <- do.call(cbind, portfolio_high)
-portfolio_low <- do.call(cbind, portfolio_low)
-portfolio_close <- do.call(cbind, portfolio_close)
-portfolio_volume <- do.call(cbind, portfolio_volume)
+# Obtain the data frame
 portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
 
-# * Reset the index of each data frame and then merge
-# Open
-portfolio_open <- lapply(portfolio_open, function(df) {
-  df$Date <- rownames(df)
-  rownames(df) <- NULL
-  return(df)
-})
-
-portfolio_open <- Reduce(function(x, y) {
-  merge(
-    x, y,
-    by = "Date", all = TRUE
-  )
-}, portfolio_open)
-
-portfolio_open <- do.call(cbind, portfolio_open)
-
-# High
-portfolio_high <- lapply(portfolio_high, function(df) {
-  df$Date <- rownames(df)
-  rownames(df) <- NULL
-  return(df)
-})
-
-portfolio_high <- Reduce(function(x, y) {
-  merge(
-    x, y,
-    by = "Date", all = TRUE
-  )
-}, portfolio_high)
-
-portfolio_high <- do.call(cbind, portfolio_high)
-
-# Low
-portfolio_low <- lapply(portfolio_low, function(df) {
-  df$Date <- rownames(df)
-  rownames(df) <- NULL
-  return(df)
-})
-
-portfolio_low <- Reduce(function(x, y) {
-  merge(
-    x, y,
-    by = "Date", all = TRUE
-  )
-}, portfolio_low)
-
-portfolio_low <- do.call(cbind, portfolio_low)
-
-# Close
-portfolio_close <- lapply(portfolio_close, function(df) {
-  df$Date <- rownames(df)
-  rownames(df) <- NULL
-  return(df)
-})
-
-portfolio_close <- Reduce(function(x, y) {
-  merge(
-    x, y,
-    by = "Date", all = TRUE
-  )
-}, portfolio_close)
-
-portfolio_close <- do.call(cbind, portfolio_close)
-
-# Volume
-portfolio_volume <- lapply(portfolio_volume, function(df) {
-  df$Date <- rownames(df)
-  rownames(df) <- NULL
-  return(df)
-})
-
-portfolio_volume <- Reduce(function(x, y) {
-  merge(
-    x, y,
-    by = "Date", all = TRUE
-  )
-}, portfolio_volume)
-
-portfolio_volume <- do.call(cbind, portfolio_volume)
-
-# Adjusted
-portfolio_adjusted <- lapply(portfolio_adjusted, function(df) {
-  df$Date <- rownames(df)
-  rownames(df) <- NULL
-  return(df)
-})
-
-portfolio_adjusted <- Reduce(function(x, y) {
-  merge(
-    x, y,
-    by = "Date", all = TRUE
-  )
-}, portfolio_adjusted)
-
-portfolio_adjusted <- do.call(cbind, portfolio_adjusted)
-class(portfolio_adjusted)
-head(portfolio_adjusted)
 View(portfolio_adjusted)
 
 # * Benchmark
@@ -357,6 +366,8 @@ View(tbills_df)
 # Some companies have been less than 5 years in the market, so they have NAs
 # at the beginning. This implies less data to work with, so they'll be removed
 
+print(ncol(portfolio_adjusted))
+
 portfolio_open <- portfolio_open[, colSums(
   is.na(portfolio_open)
 ) == 0]
@@ -382,10 +393,9 @@ portfolio_adjusted <- portfolio_adjusted[, colSums(
 ) == 0]
 
 View(portfolio_adjusted)
-class(portfolio_adjusted)
+
 # Count the number of columns excluding the Date column
-num_companies <- ncol(portfolio_adjusted) - 1
-num_companies # 491
+print(ncol(portfolio_adjusted))
 
 
 # *** FUNCTION | tbills_metrics *** -------------------------------------------
@@ -402,7 +412,7 @@ tbills_metrics <- function(df) {
 # Calculate the risk-free rate
 risk_free_rate <- tbills_metrics(tbills_df)
 
-View(risk_free_rate) # 0.0208056754596323 (mar 7, 2024)
+View(risk_free_rate)
 
 
 # *** FUNCTION | benchmark_metrics *** -----------------------------------------
@@ -419,28 +429,29 @@ benchmark_metrics <- function(df) {
 # Calculate the market average
 market_average <- benchmark_metrics(benchmark_adjusted)
 
-View(market_average) # 69.6294356438617 (mar 7, 2024)
+View(market_average)
 
 
 # *** FUNCTION | portfolio_metrics *** ----------------------------------------
+# TODO: Optimize
 
 # Function to calculate general metrics of a portfolio
 portfolio_metrics <- function(df, benchmark_adjusted) {
   # Remove the first column (Date index)
-  df <- df[, -1] # ! If you have the Date column
+  # df <- df[, -1] # ? If you have the Date column
 
   # Divide each row by the previous one and apply natural logarithm
   df <- log(df / lag(df))
   benchmark_adjusted$EUSA.Adjusted <- log(
     benchmark_adjusted$EUSA.Adjusted /
-      lag(benchmark_adjusted$EUSA.Adjusted) # ! Optimize
+      lag(benchmark_adjusted$EUSA.Adjusted)
   )
 
   # Replace NA and Inf values with 0
   df[is.na(df) | df == Inf] <- 0
-  benchmark_adjusted$EUSA.Adjusted[ # ! Optimize
+  benchmark_adjusted$EUSA.Adjusted[
     is.na(
-      benchmark_adjusted$EUSA.Adjusted # ! Optimize
+      benchmark_adjusted$EUSA.Adjusted
     ) | benchmark_adjusted$ColumnName == Inf
   ] <- 0
 
@@ -452,19 +463,19 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
   std_deviation <- apply(df, 2, sd, na.rm = TRUE) * 100
 
   betas <- sapply(names(df), function(col) {
-    formula <- as.formula(paste(col, "~ EUSA.Adjusted")) # ! Optimize
+    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
     regression_result <- lm(formula, data = cbind(
       df,
-      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted # ! Optimize
+      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
     ))
     coef(regression_result)[2]
   })
 
   r_squared <- sapply(names(df), function(col) {
-    formula <- as.formula(paste(col, "~ EUSA.Adjusted")) # ! Optimize
+    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
     regression_result <- lm(formula, data = cbind(
       df,
-      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted # ! Optimize
+      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
     ))
     summary(regression_result)$r.squared
   })
@@ -492,14 +503,14 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
 
   # ? Uses tibble
   # Use tickers (column names) as row names
-  metrics <- rownames_to_column(metrics, "Tickers") # nolint
+  metrics <- rownames_to_column(metrics, "Tickers")
 
   return(metrics)
 }
 
 
 # *** GET METRICS *** ---------------------------------------------------------
-# ! Optimize
+# TODO: Optimize
 
 # Portfolio metrics
 portfolio_open_metrics <- portfolio_metrics(
@@ -518,6 +529,7 @@ portfolio_close_metrics <- portfolio_metrics(
   portfolio_close, benchmark_adjusted
 )
 
+# ? Not necessary to calculate metrics for volume, or is it?
 # portfolio_volume_metrics <- portfolio_metrics(
 #   portfolio_volume, benchmark_adjusted
 # )
@@ -525,10 +537,8 @@ portfolio_close_metrics <- portfolio_metrics(
 portfolio_adjusted_metrics <- portfolio_metrics(
   portfolio_adjusted, benchmark_adjusted
 )
-class(portfolio_adjusted$MMM.Adjusted)
+
 View(portfolio_adjusted_metrics)
-str(portfolio_adjusted)
-str(benchmark_adjusted)
 
 
 # *** SPLIT DATAFRAMES *** ----------------------------------------------------
