@@ -169,7 +169,6 @@ portfolio_low <- lapply(list_of_tickers, low_price)
 portfolio_close <- lapply(list_of_tickers, close_price)
 portfolio_volume <- lapply(list_of_tickers, volume)
 portfolio_adjusted <- lapply(list_of_tickers, adjusted_price)
-class(portfolio_adjusted) # ! List, not dataframe
 
 # Benchmark with adjusted price
 benchmark_open <- lapply(benchmark, open_price)
@@ -362,6 +361,38 @@ class(tbills_df$DGS3MO) # ! Has to be numeric!
 
 View(tbills_df)
 
+# *** FUNCTION | remove_suffixes *** ------------------------------------------
+
+# To improve readability and usability, we only want the tickers
+remove_suffixes <- function(df) {
+  colnames(df) <- gsub(
+    "\\.Open$|\\.High$|\\.Low$|\\.Close$|\\.Volume$|\\.Adjusted$",
+    "", colnames(df)
+  )
+  return(df)
+}
+
+# Apply the function each data frame
+portfolio_open <- remove_suffixes(portfolio_open)
+portfolio_high <- remove_suffixes(portfolio_high)
+portfolio_low <- remove_suffixes(portfolio_low)
+portfolio_close <- remove_suffixes(portfolio_close)
+portfolio_volume <- remove_suffixes(portfolio_volume)
+portfolio_adjusted <- remove_suffixes(portfolio_adjusted)
+
+View(portfolio_adjusted)
+
+benchmark_open <- remove_suffixes(benchmark_open)
+benchmark_high <- remove_suffixes(benchmark_high)
+benchmark_low <- remove_suffixes(benchmark_low)
+benchmark_close <- remove_suffixes(benchmark_close)
+benchmark_volume <- remove_suffixes(benchmark_volume)
+benchmark_adjusted <- remove_suffixes(benchmark_adjusted)
+
+View(benchmark_open)
+
+# ? T-bills don't have suffixes
+
 
 # *** REMOVE COMPANIES WITH NA VALUES *** -------------------------------------
 
@@ -369,6 +400,9 @@ View(tbills_df)
 # at the beginning. This implies less data to work with, so they'll be removed
 
 print(ncol(portfolio_adjusted)) # 503, three have two share classes listed.
+
+# Save the original column names
+original_colnames <- colnames(portfolio_adjusted)
 
 portfolio_open <- portfolio_open[, colSums(
   is.na(portfolio_open)
@@ -394,10 +428,16 @@ portfolio_adjusted <- portfolio_adjusted[, colSums(
   is.na(portfolio_adjusted)
 ) == 0]
 
-View(portfolio_adjusted)
+# Count the updated number of tickers
+print(ncol(portfolio_adjusted)) # 491, 12 have been removed
 
-# Count the number of columns excluding the Date column
-print(ncol(portfolio_adjusted))
+# Find the names of the columns that were removed
+removed_colnames <- setdiff(original_colnames, colnames(portfolio_adjusted))
+
+# ABNB, CARR, CEG, CTVA, DOW, FOXA, FOX, GEHC, KVUE, OTIS, UBER, VLTO
+print(removed_colnames)
+
+View(portfolio_adjusted)
 
 
 # *** FUNCTION | tbills_metrics *** -------------------------------------------
@@ -422,7 +462,7 @@ View(risk_free_rate)
 # Function to calculate the market average
 benchmark_metrics <- function(df) {
   # Calculate the average market price
-  market_average <- mean(df$EUSA.Adjusted, na.rm = TRUE)
+  market_average <- mean(df$EUSA, na.rm = TRUE)
 
   # Return the market average
   return(market_average)
@@ -444,16 +484,16 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
 
   # Divide each row by the previous one and apply natural logarithm
   df <- log(df / lag(df))
-  benchmark_adjusted$EUSA.Adjusted <- log(
-    benchmark_adjusted$EUSA.Adjusted /
-      lag(benchmark_adjusted$EUSA.Adjusted)
+  benchmark_adjusted$EUSA <- log(
+    benchmark_adjusted$EUSA /
+      lag(benchmark_adjusted$EUSA)
   )
 
   # Replace NA and Inf values with 0
   df[is.na(df) | df == Inf] <- 0
-  benchmark_adjusted$EUSA.Adjusted[
+  benchmark_adjusted$EUSA[
     is.na(
-      benchmark_adjusted$EUSA.Adjusted
+      benchmark_adjusted$EUSA
     ) | benchmark_adjusted$ColumnName == Inf
   ] <- 0
 
@@ -465,19 +505,19 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
   std_deviation <- apply(df, 2, sd, na.rm = TRUE) * 100
 
   betas <- sapply(names(df), function(col) {
-    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
+    formula <- as.formula(paste(col, "~ EUSA"))
     regression_result <- lm(formula, data = cbind(
       df,
-      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
+      EUSA = benchmark_adjusted$EUSA
     ))
     coef(regression_result)[2]
   })
 
   r_squared <- sapply(names(df), function(col) {
-    formula <- as.formula(paste(col, "~ EUSA.Adjusted"))
+    formula <- as.formula(paste(col, "~ EUSA"))
     regression_result <- lm(formula, data = cbind(
       df,
-      EUSA.Adjusted = benchmark_adjusted$EUSA.Adjusted
+      EUSA = benchmark_adjusted$EUSA
     ))
     summary(regression_result)$r.squared
   })
@@ -505,7 +545,7 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
 
   # ? Uses tibble
   # Use tickers (column names) as row names
-  metrics <- rownames_to_column(metrics, "Tickers")
+  metrics <- rownames_to_column(metrics, "Tickers") # nolint
 
   return(metrics)
 }
@@ -575,17 +615,17 @@ generate_tsa_dfs <- function(df) {
 }
 
 # Use the function to generate the dataframes
-tsa_dfs <- generate_tsa_dfs(portfolio_adjusted)
+tsa_dfs <- generate_tsa_dfs(portfolio_adjusted) # ! Adjusted
 
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
-class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
+# View(AAPL_tsa)
+class(AAPL_tsa$AAPL) # Has to be numeric!
 
 
 # # *** FUNCTION | last_data_cols *** ------------------------------------------
-# ! Not useful at all (or is it? *Vsau-... nah)
+# ! Not useful at all (or is it? ... nah)
 
 # # Creates a column for the method
 # last_data_cols <- function(df) {
@@ -616,7 +656,7 @@ class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_last_data, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # # *** FUNCTION | last_data_error_cols *** ------------------------------------
@@ -641,7 +681,7 @@ class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_last_data_error, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # # *** FUNCTION | last_data_error_pct_cols *** --------------------------------
@@ -669,7 +709,7 @@ class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_last_data_error_pct, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # *** FUNCTION | simple_average_cols *** --------------------------------------
@@ -695,7 +735,7 @@ tsa_dfs_simple_average <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_simple_average, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # *** FUNCTION | simple_average_error_cols *** --------------------------------
@@ -721,7 +761,7 @@ tsa_dfs_simple_average_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_simple_average_error, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # *** FUNCTION | simple_average_error_pct_cols *** ---------------------------
@@ -733,8 +773,9 @@ simple_average_error_pct_cols <- function(df) {
 
   # Create the 'simple_average_error_pct' column
   df[[paste0(original_col, "_simple_average_error_pct")]] <-
-    abs((df[[original_col]] - df[[paste0(original_col, "_simple_average")]]) /
-      df[[original_col]]) * 100
+    abs((df[[original_col]] - df[[paste0(
+      original_col, "_simple_average"
+    )]]) / df[[original_col]]) * 100
 
   # Return the modified dataframe
   return(df)
@@ -748,7 +789,7 @@ tsa_dfs_simple_average_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_simple_average_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # *** FUNCTION | moving_average_n50_cols *** ----------------------------------
@@ -762,7 +803,7 @@ moving_average_n50_cols <- function(df) {
 
   # Create the 'moving_average_n50' column
   df[[paste0(original_col, "_moving_average_n50")]] <-
-    rollapply(df[[original_col]],
+    rollapply(df[[original_col]], # nolint
       width = 50, FUN = mean, align = "right",
       fill = NA
     )
@@ -779,7 +820,7 @@ tsa_dfs_moving_average_n50 <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_moving_average_n50, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | moving_average_n50_error_cols *** ----------------------------
@@ -790,9 +831,11 @@ moving_average_n50_error_cols <- function(df) {
   original_col <- names(df)[1]
 
   # Create the 'moving_average_n50_error' column
-  df[[paste0(original_col, "_moving_average_n50_error")]] <-
-    abs(df[[original_col]] -
-      df[[paste0(original_col, "_moving_average_n50")]])
+  df[[paste0(
+    original_col, "_moving_average_n50_error"
+  )]] <- abs(df[[original_col]] - df[[paste0(
+    original_col, "_moving_average_n50"
+  )]])
 
   # Return the modified dataframe
   return(df)
@@ -806,7 +849,7 @@ tsa_dfs_moving_average_n50_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_moving_average_n50_error, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | moving average_error_n50_pct_cols *** ------------------------
@@ -834,7 +877,7 @@ tsa_dfs_moving_average_n50_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_moving_average_n50_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | moving_average_n200_cols *** ---------------------------------
@@ -846,7 +889,7 @@ moving_average_n200_cols <- function(df) {
 
   # Create the 'moving_average_n200' column
   df[[paste0(original_col, "_moving_average_n200")]] <-
-    rollapply(df[[original_col]],
+    rollapply(df[[original_col]], # nolint
       width = 200, FUN = mean, align = "right",
       fill = NA
     )
@@ -863,7 +906,7 @@ tsa_dfs_moving_average_n200 <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_moving_average_n200, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | moving_average_n200_error_cols *** ---------------------------
@@ -891,7 +934,7 @@ tsa_dfs_moving_average_n200_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_moving_average_n200_error, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | moving_average_n200_error_pct_cols *** -----------------------
@@ -919,7 +962,7 @@ tsa_dfs_moving_average_n200_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_moving_average_n200_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | weighted_moving_average_n50_cols *** -------------------------
@@ -951,7 +994,7 @@ tsa_dfs_weighted_moving_average_n50 <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n50, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | weighted_moving_average_n50_error_cols *** -------------------
@@ -1008,7 +1051,7 @@ tsa_dfs_weighted_moving_average_n50_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n50_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | weighted_moving_average_n200_cols *** ------------------------
@@ -1023,7 +1066,7 @@ weighted_moving_average_n200_cols <- function(df) {
 
   # Create the 'weighted_moving_average_n200' column
   df[[paste0(original_col, "_weighted_moving_average_n200")]] <-
-    rollapply(df[[original_col]],
+    rollapply(df[[original_col]], # nolint
       width = 200, FUN = function(x) sum(x * weights) / sum(weights),
       align = "right", fill = NA
     )
@@ -1041,7 +1084,7 @@ tsa_dfs_weighted_moving_average_n200 <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n200, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | weighted_moving_average_n200_error_cols *** ------------------
@@ -1069,7 +1112,7 @@ tsa_dfs_weighted_moving_average_n200_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n200_error, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | weighted_moving_average_n200_error_pct_cols *** --------------
@@ -1098,7 +1141,7 @@ tsa_dfs_weighted_moving_average_n200_error_pct <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n200_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | exponential_smoothing_a0.1_cols *** --------------------------
@@ -1126,7 +1169,7 @@ tsa_dfs_exponential_smoothing_a0_1 <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_exponential_smoothing_a0_1, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | exponential_smoothing_a0.1_error_cols *** --------------------
@@ -1154,7 +1197,7 @@ tsa_dfs_exponential_smoothing_a0_1_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_exponential_smoothing_a0_1_error, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 # *** FUNCTION | exponential_smoothing_a0.1_error_pct_cols *** ----------------
@@ -1185,7 +1228,7 @@ tsa_dfs_error_pct <- tsa_dfs_exponential_smoothing_a0_1_error_pct # ! Final ver.
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_error_pct, envir = .GlobalEnv) # ! Final version
 
-View(AAPL.Adjusted_tsa)
+# View(AAPL_tsa)
 
 
 
@@ -1214,7 +1257,7 @@ View(AAPL.Adjusted_tsa)
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_exponential_smoothing_a0_9, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # # *** FUNCTION | exponential_smoothing_a0.9_error_cols *** -------------------
@@ -1243,7 +1286,7 @@ View(AAPL.Adjusted_tsa)
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_exponential_smoothing_a0_9_error, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # # *** FUNCTION | exponential_smoothing_a0.9_error_pct_cols *** ---------------
@@ -1273,9 +1316,9 @@ View(AAPL.Adjusted_tsa)
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_exponential_smoothing_a0_9_error_pct, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
-# # View(NVDA.Adjusted_tsa)
+# # View(NVDA_tsa)
 
 
 # *** FUNCTION | arima_cols *** -----------------------------------------------
@@ -1313,13 +1356,13 @@ View(AAPL.Adjusted_tsa)
 # # Create variables in your environment for each dataframe in the list
 # list2env(tsa_dfs_arima, envir = .GlobalEnv)
 
-# View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # *** VISUALIZE DIFFERENCES *** ------------------------------------------------
 
 # Get the data for AAPL
-vd <- AAPL.Adjusted_tsa
+vd <- AAPL_tsa
 
 # Convert row names to a column
 vd <- vd %>% rownames_to_column("Date")
@@ -1374,7 +1417,7 @@ colnames(portfolio_tsa) <- c(
 overall_averages <- numeric(6)
 
 # Fill the dataframe
-for (i in 1:length(tsa_dfs_error_pct)) {
+for (i in seq_along(tsa_dfs_error_pct)) {
   company_name <- names(tsa_dfs_error_pct)[i]
   df <- tsa_dfs_error_pct[[i]]
 
@@ -1405,7 +1448,7 @@ for (i in 1:length(tsa_dfs_error_pct)) {
   overall_averages <- overall_averages + portfolio_tsa[i, 2:7]
 }
 
-# View(NVDA.Adjusted_tsa) # Erratic
+# View(NVDA_tsa) # Erratic
 
 # Calculate the overall averages
 overall_averages <- overall_averages /
