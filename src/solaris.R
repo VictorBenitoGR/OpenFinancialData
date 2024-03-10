@@ -545,14 +545,14 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
   # ? R(f) = the risk-free rate of return for the time period
   # ? B = the beta of the portfolio of investment
 
-  # jensen_aplha <- average - (
+  # jensen_alpha <- average - (
   #   risk_free_rate + betas * (market_average - risk_free_rate)
   # ) # ! Need market_average
 
   # Metrics for each ticker
   metrics <- data.frame(
     average, variance, std_deviation, betas, r_squared, sharpe, treynor
-    # , jensen_aplha
+    # , jensen_alpha
   )
 
   # ? Uses tibble
@@ -946,9 +946,9 @@ cols_error_pct_ma_n200 <- function(df) {
 
   # Create the 'moving_average_n200_error_pct' column
   df[[paste0(original_col, "_moving_average_n200_error_pct")]] <-
-    abs((df[[original_col]] -
-      df[[paste0(original_col, "_moving_average_n200")]]) /
-      df[[original_col]]) * 100
+    abs((df[[original_col]] - df[[paste0(
+      original_col, "_moving_average_n200"
+    )]]) / df[[original_col]]) * 100
 
   # Return the modified dataframe
   return(df)
@@ -1031,9 +1031,9 @@ cols_error_pct_wma_n50 <- function(df) {
 
   # Create the 'weighted_moving_average_n50_error_pct' column
   df[[paste0(original_col, "_weighted_moving_average_n50_error_pct")]] <-
-    abs((df[[original_col]] -
-      df[[paste0(original_col, "_weighted_moving_average_n50")]]) /
-      df[[original_col]]) * 100
+    abs((df[[original_col]] - df[[paste0(
+      original_col, "_weighted_moving_average_n50"
+    )]]) / df[[original_col]]) * 100
 
   # Return the modified dataframe
   return(df)
@@ -1118,9 +1118,9 @@ cols_error_pct_wma_n200 <- function(df) {
 
   # Create the 'weighted_moving_average_n200_error_pct' column
   df[[paste0(original_col, "_weighted_moving_average_n200_error_pct")]] <-
-    abs((df[[original_col]] -
-      df[[paste0(original_col, "_weighted_moving_average_n200")]]) /
-      df[[original_col]]) * 100
+    abs((df[[original_col]] - df[[paste0(
+      original_col, "_weighted_moving_average_n200"
+    )]]) / df[[original_col]]) * 100
 
   # Return the modified dataframe
   return(df)
@@ -1200,9 +1200,9 @@ cols_error_pct_es_a01 <- function(df) {
 
   # Create the 'exponential_smoothing_a0.1_error_pct' column
   df[[paste0(original_col, "_exponential_smoothing_a0.1_error_pct")]] <-
-    abs((df[[original_col]] -
-      df[[paste0(original_col, "_exponential_smoothing_a0.1")]]) /
-      df[[original_col]]) * 100
+    abs((df[[original_col]] - df[[paste0(
+      original_col, "_exponential_smoothing_a0.1"
+    )]]) / df[[original_col]]) * 100
 
   # Return the modified dataframe
   return(df)
