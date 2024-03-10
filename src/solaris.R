@@ -529,7 +529,7 @@ portfolio_close_metrics <- portfolio_metrics(
   portfolio_close, benchmark_adjusted
 )
 
-# ? Not necessary to calculate metrics for volume, or is it?
+# ? Not necessary to calculate metrics for volume, or is it? *Vsauce music*
 # portfolio_volume_metrics <- portfolio_metrics(
 #   portfolio_volume, benchmark_adjusted
 # )
@@ -583,7 +583,7 @@ class(AAPL.Adjusted_tsa$AAPL.Adjusted) # Has to be numeric!
 
 
 # # *** FUNCTION | last_data_cols *** ------------------------------------------
-# ! Not useful at all
+# ! Not useful at all (or is it? *Vsau-... nah)
 
 # # Creates a column for the method
 # last_data_cols <- function(df) {
@@ -1178,10 +1178,13 @@ tsa_dfs_exponential_smoothing_a0_1_error_pct <- lapply(
   exponential_smoothing_a0_1_error_pct_cols
 )
 
+tsa_dfs_error_pct <- tsa_dfs_exponential_smoothing_a0_1_error_pct
+
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_exponential_smoothing_a0_1_error_pct, envir = .GlobalEnv)
 
 View(AAPL.Adjusted_tsa)
+
 
 
 # # *** FUNCTION | exponential_smoothing_a0.9_cols *** -------------------------
@@ -1314,15 +1317,15 @@ View(AAPL.Adjusted_tsa)
 # *** VISUALIZE DIFFERENCES *** ------------------------------------------------
 
 # Get the data for AAPL
-df <- AAPL.Adjusted_tsa
+vd <- AAPL.Adjusted_tsa
 
 # Convert row names to a column
-df <- df %>% rownames_to_column("Date")
+vd <- vd %>% rownames_to_column("Date")
 
-# colnames(df)
+# colnames(vd)
 
 # Convert the data to long format for plotting
-df_long <- df %>%
+vd_long <- vd %>%
   mutate(Date = as.Date(Date)) %>%
   select(Date, 2, 3, 6, 9, 12, 15, 18) %>% # Select columns by their positions
   pivot_longer(
@@ -1331,10 +1334,10 @@ df_long <- df %>%
     values_to = "Value"
   )
 
-visualize_differences <- ggplot(df_long, aes(
+visualize_differences <- ggplot(vd_long, aes(
   x = Date, y = Value, color = Variable
 )) +
-  geom_line(linewidth = 0.5, aes(linetype = Variable == names(df)[1])) +
+  geom_line(linewidth = 0.5, aes(linetype = Variable == names(vd)[1])) +
   scale_linetype_manual(values = c("solid", rep("dashed", 7)), guide = "none") +
   scale_color_manual(values = c(
     "red", "blue", "green", "orange",
@@ -1479,7 +1482,9 @@ portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
       )
 
     # Save the plot
-    ggsave(paste0("./assets/tsa_plots/", company_name, ".jpg"), plot,
+    ggsave(
+      paste0("./assets/tsa_plots/", Sys.Date(), "/", company_name, ".jpg"),
+      plot,
       width = 16, height = 9
     )
   }
