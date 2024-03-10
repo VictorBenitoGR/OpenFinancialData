@@ -1022,7 +1022,7 @@ tsa_dfs_weighted_moving_average_n50_error <- lapply(
 # Create variables in your environment for each dataframe in the list
 list2env(tsa_dfs_weighted_moving_average_n50_error, envir = .GlobalEnv)
 
-# # View(AAPL.Adjusted_tsa)
+# # View(AAPL_tsa)
 
 
 # *** FUNCTION | weighted_moving_average_n50_error_pct_cols *** ---------------
@@ -1472,12 +1472,6 @@ portfolio_tsa_plots <- function(tsa_dfs_error_pct) {
     df <- tsa_dfs_error_pct[[i]]
     company_name <- names(tsa_dfs_error_pct)[i]
 
-    # Obtain the ticker without the ".Adjusted_tsa"
-    company_title <- substr(
-      names(tsa_dfs_error_pct)[i], 1,
-      nchar(names(tsa_dfs_error_pct)[i]) - 13
-    )
-
     # Determine the best method
     all_columns <- seq(3, ncol(df), by = 3) # Adjust according to col place
     avg_errors <- colMeans(df[, all_columns], na.rm = TRUE)
@@ -1642,12 +1636,9 @@ View(portfolio_conservative)
 # TODO: Optimize
 
 # * Valuation ratios for the aggressive profile
-# Subtract the ".Adjusted" from the tickers
-tickers_aggressive <- gsub(".Adjusted", "", portfolio_aggressive$Tickers)
-
 # Get the valuation ratios, consult quantmod documentation
 valuation_ratios_aggressive <- getQuote(
-  tickers_aggressive,
+  portfolio_aggressive$Tickers,
   what = yahooQF(c(
     "Price/Book", # Stock against company assets
     "P/E Ratio", # Stock against last earnings report
@@ -1664,12 +1655,9 @@ valuation_ratios_aggressive <- rownames_to_column(
 View(valuation_ratios_aggressive)
 
 # * Valuation ratios for the moderate profile
-# Subtract the ".Adjusted" from the tickers
-tickers_moderate <- gsub(".Adjusted", "", portfolio_moderate$Tickers)
-
 # Get the valuation ratios, consult quantmod documentation
 valuation_ratios_moderate <- getQuote(
-  tickers_moderate,
+  portfolio_moderate$Tickers,
   what = yahooQF(c(
     "Price/Book", # Stock against company assets
     "P/E Ratio", # Stock against last earnings report
@@ -1686,12 +1674,9 @@ valuation_ratios_moderate <- rownames_to_column(
 View(valuation_ratios_moderate)
 
 # * Valuation ratios for the conservative profile
-# Subtract the ".Adjusted" from the tickers
-tickers_conservative <- gsub(".Adjusted", "", portfolio_conservative$Tickers)
-
 # Get the valuation ratios, consult quantmod documentation
 valuation_ratios_conservative <- getQuote(
-  tickers_conservative,
+  portfolio_conservative$Tickers,
   what = yahooQF(c(
     "Price/Book", # Stock against company assets
     "P/E Ratio", # Stock against last earnings report
@@ -1768,7 +1753,7 @@ View(portfolio_adjusted)
 # *** VISUALIZATION *** -------------------------------------------------------
 
 # aapl_adjusted_plot <- ggplot(portfolio_adjusted, aes(
-#   x = Date, y = AAPL.Adjusted
+#   x = Date, y = AAPL
 # )) +
 #   geom_area_pattern(
 #     data = portfolio_adjusted,
