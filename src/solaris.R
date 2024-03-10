@@ -56,11 +56,14 @@ source("./src/install_packages.R")
 # )
 
 # * Portfolio (to start, I'm only considering SP500 companies)
-# Run "which python3" (Linux/macOS) or "where python" (Windows) with your
-# terminal to know the path of your Python3. This'll scrap the SP500 list
-system("/usr/bin/python3 ./src/sp500_scrape.py")
+# ? Run "which python3" (Linux/macOS) or "where python" (Windows) with your
+# ? terminal to know the path of your Python3. This'll scrap the SP500 list
+# ? This repository already has the file in ./data anyway
+system("/usr/bin/python3 ./src/sp500_scrape.py") # No need to run it every time
 
 # Import a SP500 list of tickers
+# The index actually has 503 components because
+# three of them have two share classes listed.
 sp500 <- read.csv("./data/sp500.csv")
 
 # Some symbols have ".", but Yahoo Finance uses "-", this replaces them
@@ -190,7 +193,6 @@ xts_to_df <- function(xts_object) {
 # TODO: Optimize
 
 # * - Portfolio -
-
 # * Open
 # Convert each xts object to a data frame
 portfolio_open <- lapply(portfolio_open, xts_to_df)
@@ -366,7 +368,7 @@ View(tbills_df)
 # Some companies have been less than 5 years in the market, so they have NAs
 # at the beginning. This implies less data to work with, so they'll be removed
 
-print(ncol(portfolio_adjusted))
+print(ncol(portfolio_adjusted)) # 503, three have two share classes listed.
 
 portfolio_open <- portfolio_open[, colSums(
   is.na(portfolio_open)
@@ -1178,10 +1180,10 @@ tsa_dfs_exponential_smoothing_a0_1_error_pct <- lapply(
   exponential_smoothing_a0_1_error_pct_cols
 )
 
-tsa_dfs_error_pct <- tsa_dfs_exponential_smoothing_a0_1_error_pct
+tsa_dfs_error_pct <- tsa_dfs_exponential_smoothing_a0_1_error_pct # ! Final ver.
 
 # Create variables in your environment for each dataframe in the list
-list2env(tsa_dfs_exponential_smoothing_a0_1_error_pct, envir = .GlobalEnv)
+list2env(tsa_dfs_error_pct, envir = .GlobalEnv) # ! Final version
 
 View(AAPL.Adjusted_tsa)
 
@@ -1372,9 +1374,9 @@ colnames(portfolio_tsa) <- c(
 overall_averages <- numeric(6)
 
 # Fill the dataframe
-for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
-  company_name <- names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]
-  df <- tsa_dfs_exponential_smoothing_a0_1_error_pct[[i]]
+for (i in 1:length(tsa_dfs_error_pct)) {
+  company_name <- names(tsa_dfs_error_pct)[i]
+  df <- tsa_dfs_error_pct[[i]]
 
   portfolio_tsa[i, "company"] <- company_name
   portfolio_tsa[i, "simple_average_error_pct"] <-
@@ -1407,7 +1409,7 @@ for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
 
 # Calculate the overall averages
 overall_averages <- overall_averages /
-  length(tsa_dfs_exponential_smoothing_a0_1_error_pct)
+  length(tsa_dfs_error_pct)
 
 # Print the overall best method
 overall_best_method <- which.min(overall_averages)
@@ -1422,15 +1424,15 @@ View(portfolio_tsa)
 # *** FUNCTION | portfolio_tsa_plots *** --------------------------------------
 # ? Uses ggplot2 and tidyr
 
-portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
-  for (i in 1:length(tsa_dfs_exponential_smoothing_a0_1_error_pct)) {
-    df <- tsa_dfs_exponential_smoothing_a0_1_error_pct[[i]]
-    company_name <- names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]
+portfolio_tsa_plots <- function(tsa_dfs_error_pct) {
+  for (i in 1:length(tsa_dfs_error_pct)) {
+    df <- tsa_dfs_error_pct[[i]]
+    company_name <- names(tsa_dfs_error_pct)[i]
 
     # Obtain the ticker without the ".Adjusted_tsa"
     company_title <- substr(
-      names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i], 1,
-      nchar(names(tsa_dfs_exponential_smoothing_a0_1_error_pct)[i]) - 13
+      names(tsa_dfs_error_pct)[i], 1,
+      nchar(names(tsa_dfs_error_pct)[i]) - 13
     )
 
     # Determine the best method
@@ -1491,7 +1493,7 @@ portfolio_tsa_plots <- function(tsa_dfs_exponential_smoothing_a0_1_error_pct) {
 }
 
 # Call the function
-portfolio_tsa_plots(tsa_dfs_exponential_smoothing_a0_1_error_pct)
+portfolio_tsa_plots(tsa_dfs_error_pct)
 
 # Ctrl + P > AAPL_Adjusted_tsa.jpg
 
@@ -1542,7 +1544,7 @@ calculate_weights <- function(df) {
   treynor_norm <- normalize(df$treynor)
 
   # Calculate scores for each profile
-  score_risk <- rowMeans(cbind(
+  score_aggressive <- rowMeans(cbind(
     average_norm, sharpe_norm, betas_norm, r_squared_norm, treynor_norm
   )) # Higher risk, higher return
   score_moderate <- rowMeans(cbind(
@@ -1554,13 +1556,13 @@ calculate_weights <- function(df) {
   )) # Lower risk
 
   # Calculate weights
-  weights_risk <- score_risk / sum(score_risk)
+  weights_aggressive <- score_aggressive / sum(score_aggressive)
   weights_moderate <- score_moderate / sum(score_moderate)
   weights_conservative <- score_conservative / sum(score_conservative)
 
   # Add weights as the new second column
-  df_risk <- cbind(
-    df[, 1, drop = FALSE], weights_risk, df[, -1]
+  df_aggressive <- cbind(
+    df[, 1, drop = FALSE], weights_aggressive, df[, -1]
   )
   df_moderate <- cbind(
     df[, 1, drop = FALSE], weights_moderate, df[, -1]
@@ -1570,18 +1572,20 @@ calculate_weights <- function(df) {
   )
 
   return(list(
-    risk = df_risk, moderate = df_moderate, conservative = df_conservative
+    aggressive = df_aggressive,
+    moderate = df_moderate,
+    conservative = df_conservative
   ))
 }
 
 # Use the function
 portfolio_profiles <- calculate_weights(portfolio_adjusted_metrics)
-portfolio_risk <- portfolio_profiles$risk
+portfolio_aggressive <- portfolio_profiles$aggressive
 portfolio_moderate <- portfolio_profiles$moderate
 portfolio_conservative <- portfolio_profiles$conservative
 
-sum(portfolio_risk$weights_risk) # ! Has to be 1
-View(portfolio_risk)
+sum(portfolio_aggressive$weights_aggressive) # ! Has to be 1
+View(portfolio_aggressive)
 
 sum(portfolio_moderate$weights_moderate) # ! Has to be 1
 View(portfolio_moderate)
@@ -1589,20 +1593,81 @@ View(portfolio_moderate)
 sum(portfolio_conservative$weights_conservative) # ! Has to be 1
 View(portfolio_conservative)
 
+
 # *** VALUATION RATIOS *** ----------------------------------------------------
+# TODO: Contribute to the quantmod package to get more ratios
+# TODO: Optimize
 
-valuation_ratios <- getQuote(sp500$Symbol, what = yahooQF(c(
-  "Price/Book", # Stock against company assets
-  "P/E Ratio", # Stock against last earnings report
-  "Price/EPS Estimate Current Year", # Stock / Current year's earnings estimate
-  "Price/EPS Estimate Next Year" # Stock / Next-year earnings estimate
-)))
+# * Valuation ratios for the aggressive profile
+# Subtract the ".Adjusted" from the tickers
+tickers_aggressive <- gsub(".Adjusted", "", portfolio_aggressive$Tickers)
 
-View(valuation_ratios)
+# Get the valuation ratios, consult quantmod documentation
+valuation_ratios_aggressive <- getQuote(
+  tickers_aggressive,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_aggressive <- rownames_to_column(
+  valuation_ratios_aggressive, "Tickers"
+)
+
+View(valuation_ratios_aggressive)
+
+# * Valuation ratios for the moderate profile
+# Subtract the ".Adjusted" from the tickers
+tickers_moderate <- gsub(".Adjusted", "", portfolio_moderate$Tickers)
+
+# Get the valuation ratios, consult quantmod documentation
+valuation_ratios_moderate <- getQuote(
+  tickers_moderate,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_moderate <- rownames_to_column(
+  valuation_ratios_moderate, "Tickers"
+)
+
+View(valuation_ratios_moderate)
+
+# * Valuation ratios for the conservative profile
+# Subtract the ".Adjusted" from the tickers
+tickers_conservative <- gsub(".Adjusted", "", portfolio_conservative$Tickers)
+
+# Get the valuation ratios, consult quantmod documentation
+valuation_ratios_conservative <- getQuote(
+  tickers_conservative,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_conservative <- rownames_to_column(
+  valuation_ratios_conservative, "Tickers"
+)
+
+View(valuation_ratios_conservative)
+
 
 # *** GET THE DATE COLUMN *** -------------------------------------------------
 
-# * You can't use the "first" column (index), use this from library(tibble)
+# * You can't use the "first" column (index), use this from tibble
 # Portfolio
 portfolio_open <- rownames_to_column(portfolio_open, "Date")
 portfolio_high <- rownames_to_column(portfolio_high, "Date")
@@ -1728,11 +1793,14 @@ export_to_excel <- function(file, sheet_names, dataframes, col_width = 12) {
 # Usage example
 export_to_excel(
   paste("./data/Portfolio_Analysis_", Sys.Date(), ".xlsx"), c(
-    "portfolio_adjusted_metrics", "portfolio_risk", "portfolio_moderate",
-    "portfolio_conservative", "portfolio_adjusted", "benchmark_adjusted",
-    "tbills"
+    "Aggressive Portfolio", "Aggressive Valuation Ratios",
+    "Moderate Portfolio", "Moderate Valuation Ratios",
+    "Conservative Portfolio", "Conservative Valuation Ratios",
+    "Adjusted Prices", "Benchmark Adjusted Prices", "3-Month T-Bills"
   ), list(
-    portfolio_adjusted_metrics, portfolio_risk, portfolio_moderate,
-    portfolio_conservative, portfolio_adjusted, benchmark_adjusted, tbills_df
+    portfolio_aggressive, valuation_ratios_aggressive,
+    portfolio_moderate, valuation_ratios_moderate,
+    portfolio_conservative, valuation_ratios_conservative,
+    portfolio_adjusted, benchmark_adjusted, tbills_df
   )
 )
