@@ -491,7 +491,7 @@ View(market_average)
 # TODO: Optimize
 
 # Function to calculate general metrics of a portfolio
-portfolio_metrics <- function(df, benchmark_adjusted) {
+portfolio_metrics <- function(df, benchmark_adjusted, tbills_df) {
   # Remove the first column (Date index)
   # df <- df[, -1] # ? If you have the Date column
 
@@ -505,18 +505,33 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
   # Replace NA and Inf values with 0
   df[is.na(df) | df == Inf] <- 0
   benchmark_adjusted$EUSA[
-    is.na(
-      benchmark_adjusted$EUSA
-    ) | benchmark_adjusted$ColumnName == Inf
+    is.na(benchmark_adjusted$EUSA) | benchmark_adjusted$EUSA == Inf
   ] <- 0
 
   # Calculate metrics
+  # * Average Return:
+  # ? R(i) = the realized return of the portfolio or investment
   average <- colMeans(df, na.rm = TRUE) * 100
 
+  market_average <- colMeans(benchmark_adjusted, na.rm = TRUE) * 100
+
+  # * Risk-Free Rate:
+  # ? R(f) = the risk-free rate of return for the time period
+  risk_free_rate <- mean(tbills_df$DGS3MO, na.rm = TRUE) # Average rate
+
+  # * Variance:
+  # ? Variance = the square of the standard deviation,
+  # ? a measure of the dispersion of returns
   variance <- apply(df, 2, var, na.rm = TRUE) * 100
 
+  # * Standard Deviation:
+  # ? Std Deviation = a measure of the amount
+  # ? of variation or dispersion of returns
   std_deviation <- apply(df, 2, sd, na.rm = TRUE) * 100
 
+  # * Beta:
+  # ? B = the beta of the portfolio or investment, a measure
+  # ? of the investment's volatility compared to the market
   betas <- sapply(names(df), function(col) {
     formula <- as.formula(paste(col, "~ EUSA"))
     regression_result <- lm(formula, data = cbind(
@@ -526,6 +541,9 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
     coef(regression_result)[2]
   })
 
+  # * R Squared:
+  # ? R^2 = the proportion of the variance in the dependent variable
+  # ? that is predictable from the independent variable(s)
   r_squared <- sapply(names(df), function(col) {
     formula <- as.formula(paste(col, "~ EUSA"))
     regression_result <- lm(formula, data = cbind(
@@ -535,25 +553,39 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
     summary(regression_result)$r.squared
   })
 
+  # * Sharpe = (R(i) - R(f)) / Std Deviation
+  # ? R(i) = the realized return of the portfolio or investment
+  # ? R(f) = the risk-free rate of return for the time period
+  # ? Std Deviation = the amount of variation or dispersion of returns
+  # A higher one is better. It indicates that the returns are better for
+  # the given level of risk. A negative Sharpe ratio indicates that the
+  # risk-free rate is greater than the portfolio's return
   sharpe <- (average - risk_free_rate) / std_deviation
 
+  # * Treynor = (R(i) - R(f)) / B
+  # ? R(i) = the realized return of the portfolio or investment
+  # ? R(f) = the risk-free rate of return for the time period
+  # ? B = the beta of the portfolio or investment
+  # A higher one is better. It indicates that the investment has a higher
+  # risk-adjusted return. A negative Treynor ratio could indicate that
+  # the investment has a lower return than the risk-free rate.
   treynor <- (average - risk_free_rate) / betas
 
-  # ? Alpha = R(i) - (R(f) + B * (R(m) - R(f)))
-  # ? where:
+  # * Jensen's Alpha = R(i) - (R(f) + B * (R(m) - R(f)))
   # ? R(i) = the realized return of the portfolio or investment
   # ? R(m) = the realized return of the appropriate market index
   # ? R(f) = the risk-free rate of return for the time period
   # ? B = the beta of the portfolio of investment
-
-  # jensen_alpha <- average - (
-  #   risk_free_rate + betas * (market_average - risk_free_rate)
-  # ) # ! Need market_average
+  # A positive one indicates that the portfolio is performing better
+  # than the expected return given its beta (like outperforming the market
+  # on a risk-adjusted basis). A negative one indicates underperformance.
+  jensen_alpha <-
+    average - (risk_free_rate + betas * (market_average - risk_free_rate))
 
   # Metrics for each ticker
   metrics <- data.frame(
-    average, variance, std_deviation, betas, r_squared, sharpe, treynor
-    # , jensen_alpha
+    average, variance, std_deviation, betas,
+    r_squared, sharpe, treynor, jensen_alpha
   )
 
   # ? Uses tibble
@@ -569,19 +601,19 @@ portfolio_metrics <- function(df, benchmark_adjusted) {
 
 # Portfolio metrics
 portfolio_open_metrics <- portfolio_metrics(
-  portfolio_open, benchmark_adjusted
+  portfolio_open, benchmark_adjusted, tbills_df
 )
 
 portfolio_high_metrics <- portfolio_metrics(
-  portfolio_high, benchmark_adjusted
+  portfolio_high, benchmark_adjusted, tbills_df
 )
 
 portfolio_low_metrics <- portfolio_metrics(
-  portfolio_low, benchmark_adjusted
+  portfolio_low, benchmark_adjusted, tbills_df
 )
 
 portfolio_close_metrics <- portfolio_metrics(
-  portfolio_close, benchmark_adjusted
+  portfolio_close, benchmark_adjusted, tbills_df
 )
 
 # ? Not necessary to calculate metrics for volume, or is it? *Vsauce music*
@@ -590,7 +622,7 @@ portfolio_close_metrics <- portfolio_metrics(
 # )
 
 portfolio_adjusted_metrics <- portfolio_metrics(
-  portfolio_adjusted, benchmark_adjusted
+  portfolio_adjusted, benchmark_adjusted, tbills_df
 )
 
 View(portfolio_adjusted_metrics)
