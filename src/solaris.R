@@ -1232,6 +1232,33 @@ valuation_ratios_conservative <- above_below(
 
 View(valuation_ratios_conservative)
 
+# *** FINAL TICKERS *** -------------------------------------------------------
+
+# Combine the Tickers columns from the three dataframes
+tickers <- c(
+  portfolio_aggressive$Tickers,
+  portfolio_moderate$Tickers,
+  portfolio_conservative$Tickers
+)
+
+# Remove duplicates
+unique_tickers <- unique(tickers)
+
+# Create the final_tickers dataframe
+final_tickers <- data.frame(Tickers = unique_tickers)
+
+
+# *** PORTFOLIO ADJUSTED FILTERED *** -----------------------------------------
+
+# Filter portfolio_adjusted to only include the tickers in final_tickers
+portfolio_adjusted <- portfolio_adjusted[, colnames(
+  portfolio_adjusted
+) %in% final_tickers$Tickers]
+
+ncol(portfolio_adjusted) # 291
+
+View(portfolio_adjusted)
+
 
 # *** SPLIT DATAFRAMES *** ----------------------------------------------------
 
@@ -1264,8 +1291,8 @@ generate_tsa_dfs <- function(df) {
   return(df_list)
 }
 
-# Use the function to generate the dataframes
-tsa_dfs <- generate_tsa_dfs(portfolio_adjusted) # ! Adjusted <-----------------
+# Use the function to generate the dataframes based on the portfolio_adjusted
+tsa_dfs <- generate_tsa_dfs(portfolio_adjusted)
 
 # Create variables in the environment for each dataframe in the list
 list2env(tsa_dfs, envir = .GlobalEnv)
@@ -2157,7 +2184,7 @@ portfolio_tsa_plots <- function(tsa_dfs_error_pct) {
 # Call the function
 portfolio_tsa_plots(tsa_dfs_error_pct)
 
-# Ctrl + P > AAPL_Adjusted_tsa.jpg
+# Ctrl + P > 11/AAPL.jpg
 
 
 # *** TIME SERIES FORECASTING *** ---------------------------------------------
@@ -2167,16 +2194,62 @@ portfolio_tsa_plots(tsa_dfs_error_pct)
 # TODO: Soon!
 
 
-# *** GET THE DATE COLUMN *** -------------------------------------------------
+# *** ADJUSTED PRICES BY PORTFOLIO *** ----------------------------------------
 
-# * You can't use the "first" column (index), use this from tibble
+# Filter portfolio_adjusted to only include the tickers
+adjusted_prices_aggressive <- portfolio_adjusted[, colnames(
+  portfolio_adjusted
+) %in% portfolio_aggressive$Tickers]
+
+adjusted_prices_moderate <- portfolio_adjusted[, colnames(
+  portfolio_adjusted
+) %in% portfolio_moderate$Tickers]
+
+adjusted_prices_conservative <- portfolio_adjusted[, colnames(
+  portfolio_adjusted
+) %in% portfolio_conservative$Tickers]
+
+
+# *** GET THE SECTOR AND COMPANY NAME *** -------------------------------------
+
+# * Portfolio Aggressive
+# Merge portfolio_aggressive with sp500
+portfolio_aggressive <- merge(
+  portfolio_aggressive, sp500[, c("Tickers", "Security", "GICS.Sector")],
+  by = "Tickers", all.x = TRUE
+)
+
+# Reorder the columns
+portfolio_aggressive <- portfolio_aggressive %>% select(
+  Tickers, Security, `GICS.Sector`, everything()
+)
+
+# * Portfolio Moderate
+# Merge portfolio_moderate with sp500
+portfolio_moderate <- merge(
+  portfolio_moderate, sp500[, c("Tickers", "Security", "GICS.Sector")],
+  by = "Tickers", all.x = TRUE
+)
+
+# Reorder the columns
+portfolio_moderate <- portfolio_moderate %>% select(
+  Tickers, Security, `GICS.Sector`, everything()
+)
+
+
+# *** GET THE DATE COLUMN *** -------------------------------------------------
+# ? Uses Tibble package
+
 # Portfolio
-portfolio_open <- rownames_to_column(portfolio_open, "Date")
-portfolio_high <- rownames_to_column(portfolio_high, "Date")
-portfolio_low <- rownames_to_column(portfolio_low, "Date")
-portfolio_close <- rownames_to_column(portfolio_close, "Date")
-portfolio_volume <- rownames_to_column(portfolio_volume, "Date")
-portfolio_adjusted <- rownames_to_column(portfolio_adjusted, "Date")
+adjusted_prices_aggressive <- rownames_to_column(
+  adjusted_prices_aggressive, "Date"
+)
+adjusted_prices_moderate <- rownames_to_column(
+  adjusted_prices_moderate, "Date"
+)
+adjusted_prices_conservative <- rownames_to_column(
+  adjusted_prices_conservative, "Date"
+)
 
 # Benchmark
 benchmark_open <- rownames_to_column(benchmark_open, "Date")
