@@ -65,13 +65,15 @@ system("/usr/bin/python3 ./src/sp500_scrape.py") # No need to run it every time
 # three of them have two share classes listed.
 sp500 <- read.csv("./data/sp500.csv")
 
+colnames(sp500)[colnames(sp500) == "Symbol"] <- "Tickers"
+
 # Some symbols have ".", but Yahoo Finance uses "-", this replaces them
 sp500$Symbol <- gsub("\\.", "-", sp500$Symbol)
 
 View(sp500)
 
 # Apply getSymbols to each symbol and store the results in a list
-list_of_tickers <- lapply(sp500$Symbol, function(symbol) {
+list_of_tickers <- lapply(sp500$Tickers, function(symbol) {
   data <- na.omit(getSymbols(symbol,
     src = "yahoo",
     from = Sys.Date() - 1826, # 1826days = 5years
@@ -911,6 +913,7 @@ if (length(conservative_filtered_assets) > 0) {
 sum(conservative_weights_df) # ! Has to be 1
 View(conservative_weights_df)
 
+
 # *** PORTFOLIO METRICS WITH WEIGHTS *** --------------------------------------
 
 # * Aggressive
@@ -1059,8 +1062,52 @@ View(portfolio_conservative)
 # sum(portfolio_conservative$weights_conservative) # ! Has to be 1
 # View(portfolio_conservative)
 
+# *** SECTOR AVERAGE VALUATION RATIOS *** -------------------------------------
 
-# *** VALUATION RATIOS *** ----------------------------------------------------
+# There are 11 sectors in the SP500
+unique(sp500$GICS.Sector)
+
+# Get all valuation ratios for the SP500
+valuation_ratios_sp500 <- getQuote(
+  sp500$Tickers,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_sp500 <- rownames_to_column(
+  valuation_ratios_sp500, "Tickers"
+)
+
+# Merge the two dataframes based on the "Tickers" column
+valuation_ratios_sp500 <- merge(
+  valuation_ratios_sp500, sp500[, c("Tickers", "GICS.Sector")],
+  by = "Tickers", all.x = TRUE
+)
+
+View(valuation_ratios_sp500)
+
+# Remove columns "Tickers" and "Trade Time" from valuation_ratios_sp500
+valuation_ratios_sp500 <- valuation_ratios_sp500[, !(colnames(
+  valuation_ratios_sp500
+) %in% c("Tickers", "Trade Time"))]
+
+# Group by sector and calculate the average valuation ratios
+valuation_ratios_sector <- valuation_ratios_sp500 %>%
+  group_by(GICS.Sector) %>%
+  summarise_all(mean, na.rm = TRUE)
+
+# Rename GICS.Sector to Sector
+names(valuation_ratios_sector)[1] <- "Sector"
+
+View(valuation_ratios_sector)
+
+
+# *** PORTFOLIO VALUATION RATIOS *** ------------------------------------------
 # TODO: Contribute to the quantmod package to get more ratios
 # TODO: Optimize
 
