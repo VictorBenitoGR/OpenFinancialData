@@ -69,8 +69,8 @@ sp500 <- read.csv("./data/sp500.csv")
 
 colnames(sp500)[colnames(sp500) == "Symbol"] <- "Tickers"
 
-# Some symbols have ".", but Yahoo Finance uses "-", this replaces them
-sp500$Symbol <- gsub("\\.", "-", sp500$Symbol)
+# Some tickers have ".", but Yahoo Finance uses "-", this replaces them
+sp500$Tickers <- gsub("\\.", "-", sp500$Tickers)
 
 View(sp500)
 
