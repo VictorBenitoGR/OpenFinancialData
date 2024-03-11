@@ -25,9 +25,8 @@ source("./src/install_packages.R")
 
 
 # *** OBTAIN TICKER SYMBOLS *** -----------------------------------------------
-
-# ! DON'T OPEN ANYTHING THAT'S NOT A DATAFRAME IF YOUR'E USING VSCODE
 # ? Uses Quantmod. Consider sponsoring the project on joshuaulrich/quantmod
+
 # * Obtain the ticker symbols
 
 # ? Make tests with less data:
@@ -97,6 +96,9 @@ na.omit(getSymbols(
   to = Sys.Date()
 ))
 
+# Benchmarks, necessary to get Beta and R2
+benchmark <- list(EUSA)
+
 # * 3-Month/90-Day T-bills
 na.omit(getSymbols(
   "DGS3MO",
@@ -104,9 +106,6 @@ na.omit(getSymbols(
   from = Sys.Date() - 1826, # 1826days = 5years
   to = Sys.Date()
 ))
-
-# Benchmarks, necessary to get Beta and R2
-benchmark <- list(EUSA)
 
 # T-bills, necessary to get the Sharpe ratio
 tbills <- list(DGS3MO)
@@ -595,6 +594,534 @@ portfolio_adjusted_metrics <- portfolio_metrics(
 View(portfolio_adjusted_metrics)
 
 
+# *** DF TO XTS *** -----------------------------------------------------------
+# ? xts is required for package compatibility
+
+# Convert the row names to a Date object
+dates <- as.Date(rownames(portfolio_adjusted))
+
+# Create the xts object
+portfolio_open_xts <- xts(portfolio_open, order.by = dates)
+portfolio_high_xts <- xts(portfolio_high, order.by = dates)
+portfolio_low_xts <- xts(portfolio_low, order.by = dates)
+portfolio_close_xts <- xts(portfolio_close, order.by = dates)
+portfolio_volume_xts <- xts(portfolio_volume, order.by = dates)
+portfolio_adjusted_xts <- xts(portfolio_adjusted, order.by = dates)
+View(portfolio_adjusted_xts)
+
+benchmark_open_xts <- xts(benchmark_open, order.by = dates)
+benchmark_high_xts <- xts(benchmark_high, order.by = dates)
+benchmark_low_xts <- xts(benchmark_low, order.by = dates)
+benchmark_close_xts <- xts(benchmark_close, order.by = dates)
+benchmark_volume_xts <- xts(benchmark_volume, order.by = dates)
+benchmark_adjusted_xts <- xts(benchmark_adjusted, order.by = dates)
+View(benchmark_adjusted_xts)
+
+# *** PORTFOLIO ANALYTICS *** -------------------------------------------------
+# ? Uses PortfolioAnalytics package
+
+# Load the necessary libraries
+library(PortfolioAnalytics)
+library(PerformanceAnalytics)
+
+# Calculate returns
+returns <- na.omit(Return.calculate(portfolio_adjusted_xts, method = "log"))
+
+# Calculate the Sharpe ratio for each asset
+sharpe_ratios <- apply(returns, 2, SharpeRatio, FUN = "StdDev")
+
+# ?
+# Calculate the returns of the benchmark
+benchmark_returns <- na.omit(
+  Return.calculate(benchmark_adjusted_xts, method = "log")
+)
+
+# Calculate the Sharpe ratio of the benchmark
+benchmark_sharpe_ratio <- SharpeRatio(benchmark_returns, FUN = "StdDev")
+
+# TODO: This didn't work because the result is a matrix, solve it.
+# Set the threshold to be the Sharpe ratio of the benchmark
+# threshold <- benchmark_sharpe_ratio
+
+threshold <- 0.02979905
+
+# Filter the assets based on the Sharpe ratio
+filtered_assets <- names(sharpe_ratios)[sharpe_ratios > threshold]
+
+# Check if filtered_assets is not empty
+if (length(filtered_assets) > 0) {
+  # Create a portfolio specification object with the filtered assets
+  portfolio <- portfolio.spec(assets = filtered_assets)
+
+  # Add objectives
+  portfolio <- add.objective(
+    portfolio,
+    type = "return", name = "mean", enabled = TRUE
+  )
+  portfolio <- add.objective(
+    portfolio,
+    type = "risk", name = "StdDev", enabled = TRUE
+  )
+
+  # Add constraints
+  portfolio <- add.constraint(
+    portfolio = portfolio,
+    type = "diversification", min_diversification = 0.1
+  )
+  portfolio <- add.constraint(
+    portfolio = portfolio,
+    type = "long_only"
+  )
+  portfolio <- add.constraint(
+    portfolio = portfolio,
+    type = "box", min = 0.001, max = 0.1
+  )
+
+  # Optimize the portfolio with the filtered assets
+  optimum_portfolio <- optimize.portfolio(
+    R = returns[, filtered_assets],
+    portfolio = portfolio, optimize_method = "ROI"
+  )
+
+  # Convert the weights to a dataframe
+  weights_df <- as.data.frame(optimum_portfolio$weights)
+
+  # Print the cleaned weights
+  print(weights_df)
+} else {
+  print("No assets passed the Sharpe ratio threshold.")
+}
+
+sum(weights_df) # ! Has to be 1
+View(weights_df)
+
+
+# *** AGGRESSIVE PORTFOLIO *** ------------------------------------------------
+
+### Aggressive Portfolio:
+
+# Aggressive Portfolio with Additional Metrics
+aggressive_threshold <- 0.03979905
+aggressive_max_weight <- 0.1
+
+# Filter assets based on the Sharpe ratio threshold
+aggressive_filtered_assets <- names(
+  sharpe_ratios
+)[sharpe_ratios > aggressive_threshold]
+
+if (length(aggressive_filtered_assets) > 0) {
+  # Create an aggressive portfolio specification
+  aggressive_portfolio <- portfolio.spec(assets = aggressive_filtered_assets)
+
+  # Add objectives
+  aggressive_portfolio <- add.objective(
+    aggressive_portfolio,
+    type = "return", name = "mean", enabled = TRUE
+  )
+  aggressive_portfolio <- add.objective(
+    aggressive_portfolio,
+    type = "risk", name = "StdDev", enabled = TRUE
+  )
+  aggressive_portfolio <- add.objective(
+    aggressive_portfolio,
+    type = "JensenAlpha", name = "JensenAlpha", enabled = TRUE
+  )
+  aggressive_portfolio <- add.objective(
+    aggressive_portfolio,
+    type = "TreynorRatio", name = "TreynorRatio", enabled = TRUE
+  )
+
+  # Add constraints
+  aggressive_portfolio <- add.constraint(
+    aggressive_portfolio,
+    type = "diversification", min_diversification = 0.1
+  )
+  aggressive_portfolio <- add.constraint(
+    aggressive_portfolio,
+    type = "long_only"
+  )
+  aggressive_portfolio <- add.constraint(
+    aggressive_portfolio,
+    type = "box", min = 0.001, max = aggressive_max_weight
+  )
+
+  # Optimize the aggressive portfolio
+  aggressive_optimum_portfolio <- optimize.portfolio(
+    R = returns[, aggressive_filtered_assets],
+    portfolio = aggressive_portfolio, optimize_method = "ROI"
+  )
+
+  # Convert weights to a dataframe
+  aggressive_weights_df <- as.data.frame(aggressive_optimum_portfolio$weights)
+  aggressive_weights_df <- data.frame(
+    Tickers = rownames(aggressive_weights_df),
+    Weights = aggressive_weights_df[, 1]
+  )
+
+  # Print weights
+  print("Aggressive Portfolio Weights:")
+  print(aggressive_weights_df)
+} else {
+  print("No assets passed the aggressive Sharpe ratio threshold.")
+}
+
+sum(aggressive_weights_df) # ! Has to be 1
+View(aggressive_weights_df)
+
+
+# *** MODERATE PORTFOLIO *** --------------------------------------------------
+
+# Moderate Portfolio with Additional Metrics
+moderate_threshold <- 0.02979905
+moderate_max_weight <- 0.1
+
+# Filter assets based on the Sharpe ratio threshold
+moderate_filtered_assets <-
+  names(sharpe_ratios)[sharpe_ratios > moderate_threshold]
+
+if (length(moderate_filtered_assets) > 0) {
+  moderate_portfolio <- portfolio.spec(assets = moderate_filtered_assets)
+
+  # Add objectives
+  moderate_portfolio <- add.objective(
+    moderate_portfolio,
+    type = "return", name = "mean", enabled = TRUE
+  )
+  moderate_portfolio <- add.objective(
+    moderate_portfolio,
+    type = "risk", name = "StdDev", enabled = TRUE
+  )
+  moderate_portfolio <- add.objective(
+    moderate_portfolio,
+    type = "JensenAlpha", name = "JensenAlpha", enabled = TRUE
+  )
+  moderate_portfolio <- add.objective(
+    moderate_portfolio,
+    type = "TreynorRatio", name = "TreynorRatio", enabled = TRUE
+  )
+
+  # Add constraints
+  moderate_portfolio <- add.constraint(
+    moderate_portfolio,
+    type = "diversification", min_diversification = 0.1
+  )
+  moderate_portfolio <- add.constraint(
+    moderate_portfolio,
+    type = "long_only"
+  )
+  moderate_portfolio <- add.constraint(
+    moderate_portfolio,
+    type = "box", min = 0.001, max = moderate_max_weight
+  )
+
+  # Optimize the moderate portfolio
+  moderate_optimum_portfolio <-
+    optimize.portfolio(
+      R = returns[, moderate_filtered_assets],
+      portfolio = moderate_portfolio, optimize_method = "ROI"
+    )
+
+  # Convert weights to a dataframe
+  moderate_weights_df <- as.data.frame(moderate_optimum_portfolio$weights)
+  moderate_weights_df <- data.frame(
+    Tickers = rownames(moderate_weights_df),
+    Weights = moderate_weights_df[, 1]
+  )
+
+  # Print weights
+  print("Moderate Portfolio Weights:")
+  print(moderate_weights_df)
+} else {
+  print("No assets passed the moderate Sharpe ratio threshold.")
+}
+
+sum(moderate_weights_df) # ! Has to be 1
+View(moderate_weights_df)
+
+# *** CONSERVATIVE PORTFOLIO *** ----------------------------------------------
+
+# Conservative Portfolio with Additional Metrics
+conservative_threshold <- 0.01979905
+conservative_max_weight <- 0.01
+
+# Filter assets based on the Sharpe ratio threshold
+conservative_filtered_assets <-
+  names(sharpe_ratios)[sharpe_ratios > conservative_threshold]
+
+if (length(conservative_filtered_assets) > 0) {
+  # Create a conservative portfolio specification
+  conservative_portfolio <- portfolio.spec(
+    assets = conservative_filtered_assets
+  )
+
+  # Add objectives
+  conservative_portfolio <- add.objective(
+    conservative_portfolio,
+    type = "return", name = "mean", enabled = TRUE
+  )
+  conservative_portfolio <- add.objective(
+    conservative_portfolio,
+    type = "risk", name = "StdDev", enabled = TRUE
+  )
+  conservative_portfolio <- add.objective(
+    conservative_portfolio,
+    type = "JensenAlpha", name = "JensenAlpha", enabled = TRUE
+  )
+  conservative_portfolio <- add.objective(
+    conservative_portfolio,
+    type = "TreynorRatio", name = "TreynorRatio", enabled = TRUE
+  )
+
+  # Add constraints
+  conservative_portfolio <- add.constraint(
+    conservative_portfolio,
+    type = "diversification", min_diversification = 0.1
+  )
+  conservative_portfolio <- add.constraint(
+    conservative_portfolio,
+    type = "long_only"
+  )
+  conservative_portfolio <- add.constraint(
+    conservative_portfolio,
+    type = "box", min = 0.001, max = conservative_max_weight
+  )
+
+  # Optimize the conservative portfolio
+  conservative_optimum_portfolio <- optimize.portfolio(
+    R = returns[, conservative_filtered_assets],
+    portfolio = conservative_portfolio, optimize_method = "ROI"
+  )
+
+  # Convert weights to a dataframe
+  conservative_weights_df <- as.data.frame(
+    conservative_optimum_portfolio$weights
+  )
+  conservative_weights_df <- data.frame(
+    Tickers = rownames(conservative_weights_df),
+    Weights = conservative_weights_df[, 1]
+  )
+
+  # Print weights
+  print("Conservative Portfolio Weights:")
+  print(conservative_weights_df)
+} else {
+  print("No assets passed the conservative Sharpe ratio threshold.") # ! Fix
+}
+
+sum(conservative_weights_df) # ! Has to be 1
+View(conservative_weights_df)
+
+# *** PORTFOLIO METRICS WITH WEIGHTS *** --------------------------------------
+
+# * Aggressive
+# Extract selected tickers from aggressive_weights_df
+tickers_aggressive <- aggressive_weights_df$Tickers
+
+# Filter portfolio_adjusted_metrics based on selected tickers
+portfolio_aggressive <- portfolio_adjusted_metrics[
+  portfolio_adjusted_metrics$Tickers %in% tickers_aggressive,
+]
+
+# Merge with aggressive_weights_df to add weights
+portfolio_aggressive <- merge(
+  portfolio_aggressive, aggressive_weights_df,
+  by.x = "Tickers", by.y = "Tickers", all.x = TRUE
+)
+
+# Reorder the columns
+portfolio_aggressive <-
+  portfolio_aggressive[, c(
+    1, ncol(portfolio_aggressive),
+    2:(ncol(portfolio_aggressive) - 1)
+  )]
+
+View(portfolio_aggressive)
+
+# * Moderate
+# Extract selected tickers from moderate_weights_df
+tickers_moderate <- moderate_weights_df$Tickers
+
+# Filter portfolio_adjusted_metrics based on selected tickers
+portfolio_moderate <- portfolio_adjusted_metrics[
+  portfolio_adjusted_metrics$Tickers %in% tickers_moderate,
+]
+
+# Merge with moderate_weights_df to add weights
+portfolio_moderate <- merge(
+  portfolio_moderate, moderate_weights_df,
+  by.x = "Tickers", by.y = "Tickers", all.x = TRUE
+)
+
+# Reorder the columns
+portfolio_moderate <-
+  portfolio_moderate[, c(
+    1, ncol(portfolio_moderate),
+    2:(ncol(portfolio_moderate) - 1)
+  )]
+
+View(portfolio_moderate)
+
+
+# * Conservative
+# Extract selected tickers from conservative_weights_df
+tickers_conservative <- conservative_weights_df$Tickers
+
+# Filter portfolio_adjusted_metrics based on selected tickers
+portfolio_conservative <- portfolio_adjusted_metrics[
+  portfolio_adjusted_metrics$Tickers %in% tickers_conservative,
+]
+
+# Merge with conservative_weights_df to add weights
+portfolio_conservative <- merge(
+  portfolio_conservative, conservative_weights_df,
+  by.x = "Tickers", by.y = "Tickers", all.x = TRUE
+)
+
+# Reorder the columns
+portfolio_conservative <-
+  portfolio_conservative[, c(
+    1, ncol(portfolio_conservative),
+    2:(ncol(portfolio_conservative) - 1)
+  )]
+
+View(portfolio_conservative)
+
+
+# *** OBTAIN WEIGHTS (MANUAL APPROACH) *** ------------------------------------
+
+# calculate_weights <- function(df) {
+#   # Normalize the metrics
+#   normalize <- function(x) (x - min(x)) / (max(x) - min(x))
+#   average_norm <- normalize(df$average)
+
+#   # Inverse normalization because lower variance is better
+#   variance_norm <- 1 - normalize(df$variance)
+
+#   # Inverse normalization because lower std_deviation is better
+#   std_deviation_norm <- 1 - normalize(df$std_deviation)
+
+#   sharpe_norm <- normalize(df$sharpe)
+
+#   # Inverse normalization because lower betas is better
+#   betas_norm <- 1 - normalize(df$betas)
+
+#   r_squared_norm <- normalize(df$r_squared)
+#   treynor_norm <- normalize(df$treynor)
+
+#   # Calculate scores for each profile
+#   score_aggressive <- rowMeans(cbind(
+#     average_norm, sharpe_norm, betas_norm, r_squared_norm, treynor_norm
+#   )) # Higher risk, higher return
+#   score_moderate <- rowMeans(cbind(
+#     average_norm, variance_norm, std_deviation_norm, sharpe_norm,
+#     betas_norm, r_squared_norm, treynor_norm
+#   )) # Balanced
+#   score_conservative <- rowMeans(cbind(
+#     variance_norm, std_deviation_norm, betas_norm, r_squared_norm
+#   )) # Lower risk
+
+#   # Calculate weights
+#   weights_aggressive <- score_aggressive / sum(score_aggressive)
+#   weights_moderate <- score_moderate / sum(score_moderate)
+#   weights_conservative <- score_conservative / sum(score_conservative)
+
+#   # Add weights as the new second column
+#   df_aggressive <- cbind(
+#     df[, 1, drop = FALSE], weights_aggressive, df[, -1]
+#   )
+#   df_moderate <- cbind(
+#     df[, 1, drop = FALSE], weights_moderate, df[, -1]
+#   )
+#   df_conservative <- cbind(
+#     df[, 1, drop = FALSE], weights_conservative, df[, -1]
+#   )
+
+#   return(list(
+#     aggressive = df_aggressive,
+#     moderate = df_moderate,
+#     conservative = df_conservative
+#   ))
+# }
+
+# # Use the function
+# portfolio_profiles <- calculate_weights(portfolio_adjusted_metrics)
+
+# portfolio_aggressive <- portfolio_profiles$aggressive
+# portfolio_moderate <- portfolio_profiles$moderate
+# portfolio_conservative <- portfolio_profiles$conservative
+
+# sum(portfolio_aggressive$weights_aggressive) # ! Has to be 1
+# View(portfolio_aggressive)
+
+# sum(portfolio_moderate$weights_moderate) # ! Has to be 1
+# View(portfolio_moderate)
+
+# sum(portfolio_conservative$weights_conservative) # ! Has to be 1
+# View(portfolio_conservative)
+
+
+# *** VALUATION RATIOS *** ----------------------------------------------------
+# TODO: Contribute to the quantmod package to get more ratios
+# TODO: Optimize
+
+# * Valuation ratios for the aggressive profile
+# Get the valuation ratios, consult quantmod documentation
+valuation_ratios_aggressive <- getQuote(
+  portfolio_aggressive$Tickers,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_aggressive <- rownames_to_column(
+  valuation_ratios_aggressive, "Tickers"
+)
+
+View(valuation_ratios_aggressive)
+
+# * Valuation ratios for the moderate profile
+# Get the valuation ratios, consult quantmod documentation
+valuation_ratios_moderate <- getQuote(
+  portfolio_moderate$Tickers,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_moderate <- rownames_to_column(
+  valuation_ratios_moderate, "Tickers"
+)
+
+View(valuation_ratios_moderate)
+
+# * Valuation ratios for the conservative profile
+# Get the valuation ratios, consult quantmod documentation
+valuation_ratios_conservative <- getQuote(
+  portfolio_conservative$Tickers,
+  what = yahooQF(c(
+    "Price/Book", # Stock against company assets
+    "P/E Ratio", # Stock against last earnings report
+    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
+    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
+  ))
+)
+
+# Convert row names to a column
+valuation_ratios_conservative <- rownames_to_column(
+  valuation_ratios_conservative, "Tickers"
+)
+
+View(valuation_ratios_conservative)
+
+
 # *** SPLIT DATAFRAMES *** ----------------------------------------------------
 
 generate_tsa_dfs <- function(df) {
@@ -627,15 +1154,13 @@ generate_tsa_dfs <- function(df) {
 }
 
 # Use the function to generate the dataframes
-tsa_dfs <- generate_tsa_dfs(portfolio_adjusted) # ! Adjusted
+tsa_dfs <- generate_tsa_dfs(portfolio_adjusted) # ! Adjusted <-----------------
 
 # Create variables in the environment for each dataframe in the list
 list2env(tsa_dfs, envir = .GlobalEnv)
 
 # View(AAPL_tsa)
 class(AAPL_tsa$AAPL) # Has to be numeric!
-
-tsa_dfs
 
 
 # # *** Last Data (ld) *** ----------------------------------------------------
@@ -1447,6 +1972,8 @@ print(paste(
   "with an average error of", overall_averages[overall_best_method]
 ))
 
+portfolio_tsa$company <- sub("_tsa", "", portfolio_tsa$company)
+
 View(portfolio_tsa)
 
 
@@ -1454,9 +1981,10 @@ View(portfolio_tsa)
 # ? Uses ggplot2 and tidyr
 
 portfolio_tsa_plots <- function(tsa_dfs_error_pct) {
-  for (i in 1:length(tsa_dfs_error_pct)) {
+  for (i in seq_along(tsa_dfs_error_pct)) {
     df <- tsa_dfs_error_pct[[i]]
     company_name <- names(tsa_dfs_error_pct)[i]
+    company_name <- sub("_tsa", "", company_name)
 
     # Determine the best method
     all_columns <- seq(3, ncol(df), by = 3) # Adjust according to col place
@@ -1470,7 +1998,7 @@ portfolio_tsa_plots <- function(tsa_dfs_error_pct) {
       # Get the dates with the proper format
       mutate(Date = as.Date(rownames(df))) %>%
       pivot_longer(
-        cols = c(1, best_method_column),
+        cols = all_of(c(1, best_method_column)),
         names_to = "Variable",
         values_to = "Value"
       )
@@ -1480,7 +2008,7 @@ portfolio_tsa_plots <- function(tsa_dfs_error_pct) {
       geom_line() +
       scale_color_manual(values = c("#000000", "red")) +
       labs(x = "Date", y = "Value", color = "Variable") +
-      ggtitle(paste(company_title, "Time Series Analysis")) +
+      ggtitle(paste(company_name, "Time Series Analysis")) +
       labs(
         subtitle = paste(
           "Evolution of", best_method_name, " (red) over the last 5 years."
@@ -1523,160 +2051,9 @@ portfolio_tsa_plots(tsa_dfs_error_pct)
 
 # *** TIME SERIES FORECASTING *** ---------------------------------------------
 
+# ? In my opinion, it doesn't make sense to calculate the expected returns
+# ? of the portfolio using current data. At least not for all the cases
 # TODO: Soon!
-
-
-# *** OBTAIN WEIGHTS *** ------------------------------------------------------
-
-# # Install and load the necessary packages
-# install.packages(c("PerformanceAnalytics", "PortfolioAnalytics"))
-# library(PerformanceAnalytics)
-# library(PortfolioAnalytics)
-
-# install.packages("timeDate")
-# library(timeDate)
-
-# # Install and load the timeSeries package
-# install.packages("timeSeries")
-# library(timeSeries)
-
-# head(portfolio_adjusted_metrics)
-
-# # Calculate inverse-variance weights
-# inverse_variance <- 1 / portfolio_adjusted_metrics$variance
-# weights <- inverse_variance / sum(inverse_variance)
-# View(weights)
-
-calculate_weights <- function(df) {
-  # Normalize the metrics
-  normalize <- function(x) (x - min(x)) / (max(x) - min(x))
-  average_norm <- normalize(df$average)
-
-  # Inverse normalization because lower variance is better
-  variance_norm <- 1 - normalize(df$variance)
-
-  # Inverse normalization because lower std_deviation is better
-  std_deviation_norm <- 1 - normalize(df$std_deviation)
-
-  sharpe_norm <- normalize(df$sharpe)
-
-  # Inverse normalization because lower betas is better
-  betas_norm <- 1 - normalize(df$betas)
-
-  r_squared_norm <- normalize(df$r_squared)
-  treynor_norm <- normalize(df$treynor)
-
-  # Calculate scores for each profile
-  score_aggressive <- rowMeans(cbind(
-    average_norm, sharpe_norm, betas_norm, r_squared_norm, treynor_norm
-  )) # Higher risk, higher return
-  score_moderate <- rowMeans(cbind(
-    average_norm, variance_norm, std_deviation_norm, sharpe_norm,
-    betas_norm, r_squared_norm, treynor_norm
-  )) # Balanced
-  score_conservative <- rowMeans(cbind(
-    variance_norm, std_deviation_norm, betas_norm, r_squared_norm
-  )) # Lower risk
-
-  # Calculate weights
-  weights_aggressive <- score_aggressive / sum(score_aggressive)
-  weights_moderate <- score_moderate / sum(score_moderate)
-  weights_conservative <- score_conservative / sum(score_conservative)
-
-  # Add weights as the new second column
-  df_aggressive <- cbind(
-    df[, 1, drop = FALSE], weights_aggressive, df[, -1]
-  )
-  df_moderate <- cbind(
-    df[, 1, drop = FALSE], weights_moderate, df[, -1]
-  )
-  df_conservative <- cbind(
-    df[, 1, drop = FALSE], weights_conservative, df[, -1]
-  )
-
-  return(list(
-    aggressive = df_aggressive,
-    moderate = df_moderate,
-    conservative = df_conservative
-  ))
-}
-
-# Use the function
-portfolio_profiles <- calculate_weights(portfolio_adjusted_metrics)
-portfolio_aggressive <- portfolio_profiles$aggressive
-portfolio_moderate <- portfolio_profiles$moderate
-portfolio_conservative <- portfolio_profiles$conservative
-
-sum(portfolio_aggressive$weights_aggressive) # ! Has to be 1
-View(portfolio_aggressive)
-
-sum(portfolio_moderate$weights_moderate) # ! Has to be 1
-View(portfolio_moderate)
-
-sum(portfolio_conservative$weights_conservative) # ! Has to be 1
-View(portfolio_conservative)
-
-
-# *** VALUATION RATIOS *** ----------------------------------------------------
-# TODO: Contribute to the quantmod package to get more ratios
-# TODO: Optimize
-
-# * Valuation ratios for the aggressive profile
-# Get the valuation ratios, consult quantmod documentation
-valuation_ratios_aggressive <- getQuote(
-  portfolio_aggressive$Tickers,
-  what = yahooQF(c(
-    "Price/Book", # Stock against company assets
-    "P/E Ratio", # Stock against last earnings report
-    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
-    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
-  ))
-)
-
-# Convert row names to a column
-valuation_ratios_aggressive <- rownames_to_column(
-  valuation_ratios_aggressive, "Tickers"
-)
-
-View(valuation_ratios_aggressive)
-
-# * Valuation ratios for the moderate profile
-# Get the valuation ratios, consult quantmod documentation
-valuation_ratios_moderate <- getQuote(
-  portfolio_moderate$Tickers,
-  what = yahooQF(c(
-    "Price/Book", # Stock against company assets
-    "P/E Ratio", # Stock against last earnings report
-    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
-    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
-  ))
-)
-
-# Convert row names to a column
-valuation_ratios_moderate <- rownames_to_column(
-  valuation_ratios_moderate, "Tickers"
-)
-
-View(valuation_ratios_moderate)
-
-# * Valuation ratios for the conservative profile
-# Get the valuation ratios, consult quantmod documentation
-valuation_ratios_conservative <- getQuote(
-  portfolio_conservative$Tickers,
-  what = yahooQF(c(
-    "Price/Book", # Stock against company assets
-    "P/E Ratio", # Stock against last earnings report
-    "Price/EPS Estimate Current Year", # Stock/Current year's earnings estimate
-    "Price/EPS Estimate Next Year" # Stock/Next-year earnings estimate
-  ))
-)
-
-# Convert row names to a column
-valuation_ratios_conservative <- rownames_to_column(
-  valuation_ratios_conservative, "Tickers"
-)
-
-View(valuation_ratios_conservative)
 
 
 # *** GET THE DATE COLUMN *** -------------------------------------------------
