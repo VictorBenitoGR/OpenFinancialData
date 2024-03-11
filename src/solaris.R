@@ -1169,6 +1169,70 @@ valuation_ratios_conservative <- rownames_to_column(
 View(valuation_ratios_conservative)
 
 
+# *** ABOVE OR BELOW AVERAGE *** ----------------------------------------------
+
+library(dplyr)
+
+above_below <- function(df) {
+  # Get the names of the numeric columns in the dataframe
+  numeric_cols <- names(df)[sapply(df, is.numeric)]
+
+  # Convert "Invalid Number" to NA in the numeric columns
+  df[numeric_cols][df[numeric_cols] == "Invalid Number"] <- NA
+
+  # Use na.rm = TRUE to ignore NA values when calculating the mean
+  df$PB_Status <- ifelse(df$`Price/Book` > mean(
+    df$`Price/Book`,
+    na.rm = TRUE
+  ), "Above Average", "Below Average")
+
+  df$PE_Status <- ifelse(df$`P/E Ratio` > mean(
+    df$`P/E Ratio`,
+    na.rm = TRUE
+  ), "Above Average", "Below Average")
+
+  df$PE_ECY_Status <- ifelse(
+    df$`Price/EPS Estimate Current Year` > mean(
+      df$`Price/EPS Estimate Current Year`,
+      na.rm = TRUE
+    ), "Above Average", "Below Average"
+  )
+
+  df$PE_ENY_Status <- ifelse(df$`Price/EPS Estimate Next Year` > mean(
+    df$`Price/EPS Estimate Next Year`,
+    na.rm = TRUE
+  ), "Above Average", "Below Average")
+
+  # Reorder the columns
+  df <- df %>% select(1, 2, 3, 7, 4, 8, 5, 9, 6, 10)
+
+  # Remove the second column (not actually needed)
+  df <- df %>% select(-2)
+  return(df)
+}
+
+# * valuation_ratios_aggressive
+valuation_ratios_aggressive <- above_below(
+  valuation_ratios_aggressive
+)
+
+View(valuation_ratios_aggressive)
+
+# * valuation_ratios_moderate
+valuation_ratios_moderate <- above_below(
+  valuation_ratios_moderate
+)
+
+View(valuation_ratios_moderate)
+
+# * valuation_ratios_conservative
+valuation_ratios_conservative <- above_below(
+  valuation_ratios_conservative
+)
+
+View(valuation_ratios_conservative)
+
+
 # *** SPLIT DATAFRAMES *** ----------------------------------------------------
 
 generate_tsa_dfs <- function(df) {
