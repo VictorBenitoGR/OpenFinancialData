@@ -60,7 +60,7 @@ source("./src/install_packages.R")
 # ? Run "which python3" (Linux/macOS) or "where python" (Windows) with your
 # ? terminal to know the path of your Python3. This'll scrap the SP500 list
 # ? This repository already has the file in ./data anyway
-system("/usr/bin/python3 ./src/sp500_scrape.py") # No need to run it every time
+system("/usr/bin/python3 ./src/sp500_scrape.py")
 
 # Import a SP500 list of tickers
 # The index actually has 503 components because
