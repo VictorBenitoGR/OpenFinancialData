@@ -455,40 +455,6 @@ print(removed_colnames)
 View(portfolio_adjusted)
 
 
-# *** FUNCTION | tbills_metrics *** -------------------------------------------
-
-# Function to calculate the risk-free rate
-tbills_metrics <- function(df) {
-  # Calculate the average risk-free rate
-  risk_free_rate <- mean(df$DGS3MO, na.rm = TRUE)
-
-  # Return the risk-free rate
-  return(risk_free_rate)
-}
-
-# Calculate the risk-free rate
-risk_free_rate <- tbills_metrics(tbills_df)
-
-View(risk_free_rate)
-
-
-# *** FUNCTION | benchmark_metrics *** ----------------------------------------
-
-# Function to calculate the market average
-benchmark_metrics <- function(df) {
-  # Calculate the average market price
-  market_average <- mean(df$EUSA, na.rm = TRUE)
-
-  # Return the market average
-  return(market_average)
-}
-
-# Calculate the market average
-market_average <- benchmark_metrics(benchmark_adjusted)
-
-View(market_average)
-
-
 # *** FUNCTION | portfolio_metrics *** ----------------------------------------
 # TODO: Optimize
 
@@ -606,17 +572,45 @@ portfolio_open_metrics <- portfolio_metrics(
   portfolio_open, benchmark_adjusted, tbills_df
 )
 
+portfolio_open_metrics <-
+  portfolio_open_metrics[apply(
+    portfolio_open_metrics[, -1], 1,
+    function(x) all(x > 0)
+  ), ]
+
+
 portfolio_high_metrics <- portfolio_metrics(
   portfolio_high, benchmark_adjusted, tbills_df
 )
+
+portfolio_high_metrics <-
+  portfolio_high_metrics[apply(
+    portfolio_high_metrics[, -1], 1,
+    function(x) all(x > 0)
+  ), ]
+
 
 portfolio_low_metrics <- portfolio_metrics(
   portfolio_low, benchmark_adjusted, tbills_df
 )
 
+portfolio_low_metrics <-
+  portfolio_low_metrics[apply(
+    portfolio_low_metrics[, -1], 1,
+    function(x) all(x > 0)
+  ), ]
+
+
 portfolio_close_metrics <- portfolio_metrics(
   portfolio_close, benchmark_adjusted, tbills_df
 )
+
+portfolio_close_metrics <-
+  portfolio_close_metrics[apply(
+    portfolio_close_metrics[, -1], 1,
+    function(x) all(x > 0)
+  ), ]
+
 
 # ? Not necessary to calculate metrics for volume, or is it? *Vsauce music*
 # portfolio_volume_metrics <- portfolio_metrics(
@@ -626,6 +620,12 @@ portfolio_close_metrics <- portfolio_metrics(
 portfolio_adjusted_metrics <- portfolio_metrics(
   portfolio_adjusted, benchmark_adjusted, tbills_df
 )
+
+portfolio_adjusted_metrics <-
+  portfolio_adjusted_metrics[apply(
+    portfolio_adjusted_metrics[, -1], 1,
+    function(x) all(x > 0)
+  ), ]
 
 View(portfolio_adjusted_metrics)
 
@@ -656,17 +656,12 @@ View(benchmark_adjusted_xts)
 # *** PORTFOLIO ANALYTICS *** -------------------------------------------------
 # ? Uses PortfolioAnalytics package
 
-# Load the necessary libraries
-library(PortfolioAnalytics)
-library(PerformanceAnalytics)
-
 # Calculate returns
 returns <- na.omit(Return.calculate(portfolio_adjusted_xts, method = "log"))
 
 # Calculate the Sharpe ratio for each asset
 sharpe_ratios <- apply(returns, 2, SharpeRatio, FUN = "StdDev")
 
-# ?
 # Calculate the returns of the benchmark
 benchmark_returns <- na.omit(
   Return.calculate(benchmark_adjusted_xts, method = "log")
@@ -681,55 +676,55 @@ benchmark_sharpe_ratio <- SharpeRatio(benchmark_returns, FUN = "StdDev")
 
 threshold <- 0.02979905
 
-# Filter the assets based on the Sharpe ratio
-filtered_assets <- names(sharpe_ratios)[sharpe_ratios > threshold]
+# # Filter the assets based on the Sharpe ratio
+# filtered_assets <- names(sharpe_ratios)[sharpe_ratios > threshold]
 
-# Check if filtered_assets is not empty
-if (length(filtered_assets) > 0) {
-  # Create a portfolio specification object with the filtered assets
-  portfolio <- portfolio.spec(assets = filtered_assets)
+# # Check if filtered_assets is not empty
+# if (length(filtered_assets) > 0) {
+#   # Create a portfolio specification object with the filtered assets
+#   portfolio <- portfolio.spec(assets = filtered_assets)
 
-  # Add objectives
-  portfolio <- add.objective(
-    portfolio,
-    type = "return", name = "mean", enabled = TRUE
-  )
-  portfolio <- add.objective(
-    portfolio,
-    type = "risk", name = "StdDev", enabled = TRUE
-  )
+#   # Add objectives
+#   portfolio <- add.objective(
+#     portfolio,
+#     type = "return", name = "mean", enabled = TRUE
+#   )
+#   portfolio <- add.objective(
+#     portfolio,
+#     type = "risk", name = "StdDev", enabled = TRUE
+#   )
 
-  # Add constraints
-  portfolio <- add.constraint(
-    portfolio = portfolio,
-    type = "diversification", min_diversification = 0.1
-  )
-  portfolio <- add.constraint(
-    portfolio = portfolio,
-    type = "long_only"
-  )
-  portfolio <- add.constraint(
-    portfolio = portfolio,
-    type = "box", min = 0.001, max = 0.1
-  )
+#   # Add constraints
+#   portfolio <- add.constraint(
+#     portfolio = portfolio,
+#     type = "diversification", min_diversification = 0.1
+#   )
+#   portfolio <- add.constraint(
+#     portfolio = portfolio,
+#     type = "long_only"
+#   )
+#   portfolio <- add.constraint(
+#     portfolio = portfolio,
+#     type = "box", min = 0.001, max = 0.1
+#   )
 
-  # Optimize the portfolio with the filtered assets
-  optimum_portfolio <- optimize.portfolio(
-    R = returns[, filtered_assets],
-    portfolio = portfolio, optimize_method = "ROI"
-  )
+#   # Optimize the portfolio with the filtered assets
+#   optimum_portfolio <- optimize.portfolio(
+#     R = returns[, filtered_assets],
+#     portfolio = portfolio, optimize_method = "ROI"
+#   )
 
-  # Convert the weights to a dataframe
-  weights_df <- as.data.frame(optimum_portfolio$weights)
+#   # Convert the weights to a dataframe
+#   weights_df <- as.data.frame(optimum_portfolio$weights)
 
-  # Print the cleaned weights
-  print(weights_df)
-} else {
-  print("No assets passed the Sharpe ratio threshold.")
-}
+#   # Print the cleaned weights
+#   print(weights_df)
+# } else {
+#   print("No assets passed the Sharpe ratio threshold.")
+# }
 
-sum(weights_df) # ! Has to be 1
-View(weights_df)
+# sum(weights_df) # ! Has to be 1
+# View(weights_df)
 
 
 # *** AGGRESSIVE PORTFOLIO *** ------------------------------------------------
@@ -804,6 +799,39 @@ if (length(aggressive_filtered_assets) > 0) {
 sum(aggressive_weights_df) # ! Has to be 1
 View(aggressive_weights_df)
 
+# Calculate portfolio returns
+aggressive_portfolio_returns <- Return.portfolio(
+  R = returns[, aggressive_filtered_assets],
+  weights = aggressive_optimum_portfolio$weights
+)
+
+# Print mean return (daily)
+mean_return_daily <- mean(aggressive_portfolio_returns)
+print(paste("Mean daily return:", mean_return_daily))
+
+# Calculate and print mean return (annualized)
+mean_return_annualized <- (1 + mean_return_daily)^252 - 1
+print(paste("Mean annualized return:", mean_return_annualized))
+
+# Print standard deviation (daily)
+std_dev <- sd(aggressive_portfolio_returns)
+print(paste("Standard deviation (daily):", std_dev))
+
+# Calculate and print standard deviation (annualized)
+std_dev_annualized <- std_dev * sqrt(252)
+print(paste("Standard deviation (annualized):", std_dev_annualized))
+
+# Print Sharpe Ratio
+sharpe_ratio <- SharpeRatio(aggressive_portfolio_returns, Rf = 0) # Assuming a risk-free rate of 0
+print(paste("Sharpe Ratio:", sharpe_ratio))
+
+# Calculate and print Sortino Ratio
+sortino_ratio <- SortinoRatio(aggressive_portfolio_returns, Rf = 0) # Assuming a risk-free rate of 0
+print(paste("Sortino Ratio:", sortino_ratio))
+
+# Calculate and print Maximum Drawdown
+max_drawdown <- maxDrawdown(aggressive_portfolio_returns)
+print(paste("Maximum Drawdown:", max_drawdown))
 
 # *** MODERATE PORTFOLIO *** --------------------------------------------------
 
@@ -873,6 +901,40 @@ if (length(moderate_filtered_assets) > 0) {
 
 sum(moderate_weights_df) # ! Has to be 1
 View(moderate_weights_df)
+
+# Calculate portfolio returns
+moderate_portfolio_returns <- Return.portfolio(
+  R = returns[, moderate_filtered_assets],
+  weights = moderate_optimum_portfolio$weights
+)
+
+# Print mean return (daily)
+mean_return_daily <- mean(moderate_portfolio_returns)
+print(paste("Mean daily return:", mean_return_daily))
+
+# Calculate and print mean return (annualized)
+mean_return_annualized <- (1 + mean_return_daily)^252 - 1
+print(paste("Mean annualized return:", mean_return_annualized))
+
+# Print standard deviation (daily)
+std_dev <- sd(moderate_portfolio_returns)
+print(paste("Standard deviation (daily):", std_dev))
+
+# Calculate and print standard deviation (annualized)
+std_dev_annualized <- std_dev * sqrt(252)
+print(paste("Standard deviation (annualized):", std_dev_annualized))
+
+# Print Sharpe Ratio
+sharpe_ratio <- SharpeRatio(moderate_portfolio_returns, Rf = 0) # Assuming a risk-free rate of 0
+print(paste("Sharpe Ratio:", sharpe_ratio))
+
+# Calculate and print Sortino Ratio
+sortino_ratio <- SortinoRatio(moderate_portfolio_returns, Rf = 0) # Assuming a risk-free rate of 0
+print(paste("Sortino Ratio:", sortino_ratio))
+
+# Calculate and print Maximum Drawdown
+max_drawdown <- maxDrawdown(moderate_portfolio_returns)
+print(paste("Maximum Drawdown:", max_drawdown))
 
 # *** CONSERVATIVE PORTFOLIO *** ----------------------------------------------
 
@@ -946,6 +1008,40 @@ if (length(conservative_filtered_assets) > 0) {
 
 sum(conservative_weights_df) # ! Has to be 1
 View(conservative_weights_df)
+
+# Calculate portfolio returns
+conservative_portfolio_returns <- Return.portfolio(
+  R = returns[, conservative_filtered_assets],
+  weights = conservative_optimum_portfolio$weights
+)
+
+# Print mean return (daily)
+mean_return_daily <- mean(conservative_portfolio_returns)
+print(paste("Mean daily return:", mean_return_daily))
+
+# Calculate and print mean return (annualized)
+mean_return_annualized <- (1 + mean_return_daily)^252 - 1
+print(paste("Mean annualized return:", mean_return_annualized))
+
+# Print standard deviation (daily)
+std_dev <- sd(conservative_portfolio_returns)
+print(paste("Standard deviation (daily):", std_dev))
+
+# Calculate and print standard deviation (annualized)
+std_dev_annualized <- std_dev * sqrt(252)
+print(paste("Standard deviation (annualized):", std_dev_annualized))
+
+# Print Sharpe Ratio
+sharpe_ratio <- SharpeRatio(conservative_portfolio_returns, Rf = 0) # Assuming a risk-free rate of 0
+print(paste("Sharpe Ratio:", sharpe_ratio))
+
+# Calculate and print Sortino Ratio
+sortino_ratio <- SortinoRatio(conservative_portfolio_returns, Rf = 0) # Assuming a risk-free rate of 0
+print(paste("Sortino Ratio:", sortino_ratio))
+
+# Calculate and print Maximum Drawdown
+max_drawdown <- maxDrawdown(conservative_portfolio_returns)
+print(paste("Maximum Drawdown:", max_drawdown))
 
 
 # *** PORTFOLIO METRICS WITH WEIGHTS *** --------------------------------------

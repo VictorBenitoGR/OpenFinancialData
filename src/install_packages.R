@@ -13,7 +13,8 @@ packages <- c(
   "siebanxicor", #    Access to the Mexican Stock Exchange (BMV) API
   "lubridate", #      Working with dates and times
   "xts", #            Uniform handling of different time-based data classes
-  "PortfolioAnalytics", # Portfolio Analysis, Optimization and Backtesting
+  "PortfolioAnalytics", #   Portfolio Analysis, Optimization and Backtesting
+  "PerformanceAnalytics", # Econometric tools for performance and risk analysis
   "tibble", #         Simple data frames
   "tidyverse", #      Data manipulation and visualization packages
   "ggplot2", #        Data visualization
