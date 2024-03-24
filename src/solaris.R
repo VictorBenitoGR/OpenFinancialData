@@ -34,24 +34,24 @@ source("./src/install_packages.R")
 # ? Make tests with less data:
 # na.omit(getSymbols(
 #   c(
-#     "EUSA", # Benchmark (MSCI USA Equal Weighted ETF). SP500'd be "^GSPC"
-#     "AAPL", "MSFT", "NVDA", "AMZN", "META",
-#     "GOOGL", "GOOG", "LLY", "TSLA", "AVGO",
-#     "TMO", "JPM", "UNH", "V", "XOM",
-#     "MA", "JNJ", "PG", "HD", "MRK",
+#     "AAPL", "MSFT", "NVDA", "FICO", "ARES",
+#     "ODFL", "KLAC", "LLY", "TSLA", "AVGO",
+#     "AZO", "AJG", "AMD", "CELH", "CNC",
+#     "KKR", "COST", "ABBV", "REGN", "DECK",
 #     "COST", "ABBV", "AMD", "CRM", "CVX",
 #     "ADBE", "NFLX", "WMT", "KO", "BAC"
 #   ),
 #   src = "yahoo",
+#   periodicity = "monthly",
 #   from = Sys.Date() - 1826, # 1826days = 5years
 #   to = Sys.Date()
 # ))
 
 # list_of_tickers <- list(
-#   AAPL, MSFT, NVDA, AMZN, META,
-#   GOOGL, GOOG, LLY, TSLA, AVGO,
-#   TMO, JPM, UNH, V, XOM,
-#   MA, JNJ, PG, HD, MRK,
+#   AAPL, MSFT, NVDA, FICO, ARES,
+#   ODFL, KLAC, LLY, TSLA, AVGO,
+#   AZO, AJG, AMD, CELH, CNC,
+#   KKR, COST, ABBV, REGN, DECK,
 #   COST, ABBV, AMD, CRM, CVX,
 #   ADBE, NFLX, WMT, KO, BAC
 # )
@@ -96,6 +96,7 @@ list_of_tickers <- lapply(list_of_tickers, function(xts_obj) {
 na.omit(getSymbols(
   "EUSA",
   src = "yahoo",
+  periodicity = "monthly",
   from = Sys.Date() - 1826, # 1826days = 5years
   to = Sys.Date()
 ))
@@ -113,15 +114,16 @@ na.omit(getSymbols(
 
 # T-bills, necessary to get the Sharpe ratio
 tbills <- list(DGS3MO)
+tbills_TB3MS <- list(TB3MS)
 
 
 # *** FUNCTIONS | SPLIT BY TYPES *** ------------------------------------------
 
-# ? Open (O): The price of the asset at the beginning of the trading period.
-# ? High (H): The highest price reached by the asset.
-# ? Low (L): The lowest price reached by the asset.
-# ? Close (C): The price of the asset at the end of the trading period.
-# ? Volume (V): The total number of shares or contracts traded.
+# ? Open (O): The price of the asset at the beginning of the trading period
+# ? High (H): The highest price reached by the asset
+# ? Low (L): The lowest price reached by the asset
+# ? Close (C): The price of the asset at the end of the trading period
+# ? Volume (V): The total number of shares or contracts traded
 # ? Adjusted (Adj or Adjusted): Price after accounting for corporate actions
 
 # TODO: Optimize
@@ -374,8 +376,22 @@ tbills_df$DGS3MO <- as.numeric(tbills_df$DGS3MO) / 100
 
 class(tbills_df$DGS3MO) # ! Has to be numeric!
 
-View(tbills_df)
+# Use lapply to convert each xts object to a data frame
+tbills_dfTB3MS <- lapply(tbills_TB3MS, xts_to_df)
 
+# Combine the data frames into a single data frame
+tbills_dfTB3MS <- do.call(cbind, tbills_dfTB3MS)
+
+# Replace 'Invalid Number' with NA
+tbills_dfTB3MS$TB3MS <- sub("Invalid Number", NA, tbills_dfTB3MS$TB3MS)
+
+# Transform tbills_df$DGS3MO to numeric and divide by 100 for percentage
+tbills_dfTB3MS$TB3MS <- as.numeric(tbills_dfTB3MS$TB3MS) / 100
+
+class(tbills_dfTB3MS$TB3MS) # ! Has to be numeric!
+
+View(tbills_df)
+View(tbills_dfTB3MS)
 # *** FUNCTION | remove_suffixes *** ------------------------------------------
 
 # To improve readability and usability, we only want the tickers
@@ -404,7 +420,7 @@ benchmark_close <- remove_suffixes(benchmark_close)
 benchmark_volume <- remove_suffixes(benchmark_volume)
 benchmark_adjusted <- remove_suffixes(benchmark_adjusted)
 
-View(benchmark_open)
+View(benchmark_adjusted)
 
 # ? T-bills don't have suffixes
 
@@ -2380,7 +2396,49 @@ adjusted_prices_moderate <- rownames_to_column(
 adjusted_prices_conservative <- rownames_to_column(
   adjusted_prices_conservative, "Date"
 )
+portfolio_open <- rownames_to_column(portfolio_open, "Date")
+portfolio_high <- rownames_to_column(portfolio_high, "Date")
+portfolio_low <- rownames_to_column(portfolio_low, "Date")
+portfolio_close <- rownames_to_column(portfolio_close, "Date")
+portfolio_volume <- rownames_to_column(portfolio_volume, "Date")
+portfolio_adjusted <- rownames_to_column(portfolio_adjusted, "Date")
 
+# Make all column names unique
+names(portfolio_open) <- make.names(names(portfolio_open), unique = TRUE)
+
+# Check if 'Date' column exists
+if ("Date" %in% names(portfolio_open)) {
+  # Drop 'Date' column
+  portfolio_open$Date <- NULL
+}
+# List of data frames to process
+data_frames <- list(portfolio_open, portfolio_high, portfolio_low, portfolio_close, portfolio_volume, portfolio_adjusted)
+
+# Names of the data frames
+data_frame_names <- c("portfolio_open", "portfolio_high", "portfolio_low", "portfolio_close", "portfolio_volume", "portfolio_adjusted")
+
+# Process each data frame
+for (i in seq_along(data_frames)) {
+  # Make all column names unique
+  names(data_frames[[i]]) <- make.names(names(data_frames[[i]]), unique = TRUE)
+
+  # Check if 'Date' column exists
+  if ("Date" %in% names(data_frames[[i]])) {
+    # Drop 'Date' column
+    data_frames[[i]]$Date <- NULL
+  }
+
+  # Convert row names to 'Date' column
+  data_frames[[i]] <- rownames_to_column(data_frames[[i]], "Date")
+
+  # Assign the processed data frame back to the original variable
+  assign(data_frame_names[i], data_frames[[i]], envir = .GlobalEnv)
+}
+
+# Convert row names to 'Date' column
+portfolio_open <- rownames_to_column(portfolio_open, "Date")
+View(portfolio_open)
+View(portfolio_adjusted)
 # Benchmark
 benchmark_open <- rownames_to_column(benchmark_open, "Date")
 benchmark_high <- rownames_to_column(benchmark_high, "Date")
@@ -2391,7 +2449,7 @@ benchmark_adjusted <- rownames_to_column(benchmark_adjusted, "Date")
 
 # T-bills
 tbills_df <- rownames_to_column(tbills_df, "Date")
-
+tbills_dfTB3MS <- rownames_to_column(tbills_dfTB3MS, "Date")
 
 # *** CHARACTER TO DATE *** ---------------------------------------------------
 
@@ -2418,10 +2476,14 @@ benchmark_adjusted$Date <- as.Date(benchmark_adjusted$Date, format = "%Y-%m-%d")
 
 # T-bills
 tbills_df$Date <- as.Date(tbills_df$Date, format = "%Y-%m-%d")
+tbills_dfTB3MS$Date <- as.Date(tbills_dfTB3MS$Date, format = "%Y-%m-%d")
+
 
 class(portfolio_adjusted$Date) # Date
 class(benchmark_adjusted$Date) # Date
 class(tbills_df$Date) # Date
+class(tbills_dfTB3MS$Date) # Date
+
 # TODO: Search if there's a difference with POSIXct
 
 View(portfolio_adjusted)
@@ -2495,17 +2557,20 @@ export_to_excel <- function(file, sheet_names, dataframes, col_width = 12) {
   saveWorkbook(wb, file, overwrite = TRUE)
 }
 
-# Usage example
 export_to_excel(
-  paste("./data/Portfolio_Analysis_", Sys.Date(), ".xlsx"), c(
-    "Aggressive Portfolio", "Aggressive Valuation Ratios",
-    "Moderate Portfolio", "Moderate Valuation Ratios",
-    "Conservative Portfolio", "Conservative Valuation Ratios",
-    "Adjusted Prices", "Benchmark Adjusted Prices", "3-Month T-Bills"
+  paste("./data/Portfolio_Analysis_Monthly_", Sys.Date(), ".xlsx"), c(
+    "Portfolio Open Prices", "Portfolio High Prices",
+    "Portfolio Low Prices", "Portfolio Close Prices",
+    "Portfolio Volume", "Portfolio Adjusted Prices",
+    "Benchmark Open Prices", "Benchmark High Prices",
+    "Benchmark Low Prices", "Benchmark Close Prices",
+    "Benchmark Volume", "Benchmark Adjusted Prices",
+    "3-Month T-Bills Market Yield", " 3-MonthT-BillSecondaryMktRate"
   ), list(
-    portfolio_aggressive, valuation_ratios_aggressive,
-    portfolio_moderate, valuation_ratios_moderate,
-    portfolio_conservative, valuation_ratios_conservative,
-    portfolio_adjusted, benchmark_adjusted, tbills_df
+    portfolio_open, portfolio_high, portfolio_low,
+    portfolio_close, portfolio_volume, portfolio_adjusted,
+    benchmark_open, benchmark_high, benchmark_low,
+    benchmark_close, benchmark_volume, benchmark_adjusted,
+    tbills_df, tbills_dfTB3MS
   )
 )
