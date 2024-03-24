@@ -3,7 +3,7 @@ Transparency, analysis, forecasting, visualization and improvement of the financ
 
 
 ## Background
-I started this project during my university career at Tecnologico de Monterrey (ITESM), which has direct agreements with several companies for students to develop projects that address specific problems they have, like L'Oréal Mexico and MSCI USA.
+I started this project during my university career at Tecnologico de Monterrey (ITESM), which has direct agreements with several companies for students to develop projects that address specific problems they have, like L'Oréal Mexico and MSCI USA. **This project doesn't use confidential information/methodologies of any kind.**
 
 ![L'Oréal and MSCI](./assets/README/loreal_and_msci_itesm.png "L'Oréal and MSCI")
 
@@ -62,7 +62,7 @@ Its ultimate goal is to simplify the insertion of any company to corporate inves
 
 
 ### Benchmark Analysis
-MSCI USA and SP500 are the base benchmarks used.
+MSCI USA (EUSA) is the benchmark used.
 
 ### Portfolio Analysis
 
