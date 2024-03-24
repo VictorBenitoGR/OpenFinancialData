@@ -235,7 +235,10 @@ library(ggplot2)
 library(gridExtra)
 
 # Create the plot for Inflation
+<<<<<<< HEAD
 # Create the plot for Inflation
+=======
+>>>>>>> 61c20ca (Add new files and update code)
 plot_inflation <- ggplot(df3, aes(x = Year, y = Inflation)) +
   geom_line(size = 1, color = "red", linetype = 2) +
   geom_point(size = 3, color = "#820000") +
@@ -283,3 +286,133 @@ plot_gdp <- ggplot(df3, aes(x = Year, y = GDP)) +
 
 # Save the combined plot
 ggsave("my_plotgdp.jpg", plot_gdp, width = 4, height = 7, dpi = 600)
+<<<<<<< HEAD
+=======
+
+# * Optimized Vs MSCI USA
+
+# comparison <- data.frame(
+#   metric = c(
+#     "Annu. Return", "Annu. Risk", "Beta", "Sharpe",
+#     "Treynor", "Alpha", "VaR"
+#   ),
+#   portfolio = c(
+#     "48.28%", "26.72%", 0.89, 1.611,
+#     0.483, 0.124, "4.195%"
+#   ),
+#   msci_usa = c(
+#     "39.64%", "22.4%", 0.97, 1.536,
+#     0.355, 0.010, "2.676%"
+#   )
+# )
+
+comparison <- data.frame(
+  metric = c(
+    "Annu. Return", "Annu. Risk", "Beta", "Sharpe",
+    "Treynor", "Alpha", "VaR"
+  ),
+  portfolio = c(
+    "45.64%", "27.16%", 1.04, 1.488,
+    0.387, 0.206, "4.195%"
+  ),
+  msci_usa = c(
+    "24.20%", "22.35%", 0.97, 0.849,
+    0.196, 0.006, "2.676%"
+  )
+)
+
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Convert percentages to numeric
+comparison$portfolio <- ifelse(grepl("%", comparison$portfolio), as.numeric(sub("%", "", comparison$portfolio)) / 100, as.numeric(comparison$portfolio))
+comparison$msci_usa <- ifelse(grepl("%", comparison$msci_usa), as.numeric(sub("%", "", comparison$msci_usa)) / 100, as.numeric(comparison$msci_usa))
+
+# Reshape data from wide to long format
+comparison_long <- comparison %>%
+  gather(key = "group", value = "value", -metric)
+
+# Define metric groups
+group1 <- c("Annu. Return", "Annu. Risk")
+group2 <- c("Beta", "Sharpe", "Treynor", "Alpha")
+group3 <- c("VaR")
+
+plot_group1 <- ggplot(comparison_long %>% filter(metric %in% group1), aes(x = metric, y = value, fill = group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_label(aes(label = scales::percent(value), group = group), position = position_dodge(width = 1), vjust = -0.5, color = "white", fill = "black", fontface = "bold") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c("msci_usa" = "#054496", "portfolio" = "#96052e")) +
+  xlab(NULL) + ylab(NULL) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold", colour = "black", size = 14),
+        axis.text.y = element_text(face = "bold", colour = "black"),
+        axis.title = element_text(face = "bold", colour = "black"),
+        panel.grid.major = element_line(color = "black", size = 0.2),
+        panel.grid.minor = element_line(color = "black", size = 0.2)) +
+  guides(fill=FALSE)
+
+# Define a function to format the labels
+format_label <- function(metric, value) {
+  if (metric %in% c("Beta", "Sharpe", "Treynor", "Alpha")) {
+    return(as.character(round(value, 3)))
+  } else {
+    return(scales::percent(value))
+  }
+}
+
+# Load necessary library
+library(forcats)
+
+# Reorder the factor levels of the metric variable
+comparison_long$metric <- fct_relevel(comparison_long$metric, "Alpha", after = Inf)
+
+# Create the plot
+plot_group2 <- ggplot(comparison_long %>% filter(metric %in% group2), aes(x = metric, y = value, fill = group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_label(aes(label = format_label(metric, value), group = group), position = position_dodge(width = 1), vjust = -0.5, color = "white", fill = "black", fontface = "bold") +
+  scale_fill_manual(values = c("msci_usa" = "#054496", "portfolio" = "#96052e")) +
+  xlab(NULL) + ylab(NULL) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold", colour = "black", size = 14),
+    axis.text.y = element_text(face = "bold", colour = "black"),
+    axis.title = element_text(face = "bold", colour = "black"),
+    panel.grid.major = element_line(color = "black", size = 0.2),
+    panel.grid.minor = element_line(color = "black", size = 0.2)) +
+  guides(fill=FALSE)
+
+plot_group3 <- ggplot(comparison_long %>% filter(metric %in% group3), aes(x = metric, y = value, fill = group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_label(aes(label = scales::percent(value), group = group), position = position_dodge(width = 1), vjust = -0.5, color = "white", fill = "black", fontface = "bold") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c("msci_usa" = "#054496", "portfolio" = "#96052e")) +
+  xlab(NULL) + ylab(NULL) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold", colour = "black", size = 14),
+        axis.text.y = element_text(face = "bold", colour = "black"),
+        axis.title = element_text(face = "bold", colour = "black"),
+        panel.grid.major = element_line(color = "black", size = 0.2),
+        panel.grid.minor = element_line(color = "black", size = 0.2)) +
+  guides(fill=FALSE)
+
+# Save the plots
+ggsave("my_plotgroup1.jpg", plot_group1, width = 5, height = 7, dpi = 600)
+ggsave("my_plotgroup2.jpg", plot_group2, width = 7, height = 7, dpi = 600)
+ggsave("my_plotgroup3.jpg", plot_group3, width = 3, height = 7, dpi = 600)
+
+library(gridExtra)
+
+# Combine the plots
+combined_plot <- grid.arrange(plot_group1, plot_group2, ncol = 2, widths = c(0.57, 1.08))
+
+# Save the combined plot
+ggsave("combined_plot.png", combined_plot, width = 15, height = 8, dpi = 600, bg = "transparent")
+
+# * PLOT WEIGHTS ----------------------------
+
+# Import xlsx df
+df_weights <- read.xlsx("./data/weights.xlsx")
+
+head(df_weights)
+>>>>>>> 61c20ca (Add new files and update code)
