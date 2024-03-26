@@ -61,10 +61,14 @@ This module seeks to automate the analysis of financial portfolios and asset inv
 Its ultimate goal is to simplify the insertion of any company to corporate investment, customizing the condensation of their tax implications.
 
 
-### Benchmark Analysis
-MSCI USA (EUSA) is the benchmark used.
-
 ### Portfolio Analysis
+
+#### Companies
+First, let's get the data of the S&P 500 companies by scraping its Wikipedia page. Of course this is an initial approach, in the future I will extract it from official sources, and expand the horizon for more companies.
+
+Note that we get a total of **503** tickers, this is because S&P adds all the share classes of the companies, in this case Alphabet Inc. (GOOGL & GOOG), Fox Corporation (FOXA & FOX) and News Corp (NWS & NWSA).
+
+![SP500 companies](./assets/README/solaris_sp500.png "SP500 companies")
 
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
