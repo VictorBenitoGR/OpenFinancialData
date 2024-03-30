@@ -75,6 +75,32 @@ Note that we get a total of **503** tickers, this is because S&P adds all the sh
 > I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) I hope to start soon too! :)
 
 
+Extract opening, closing and adjusted prices, as well as their lows, highs and volume from Yahoo Finance.
+
+``` R
+# Apply getSymbols to each symbol and store the results in a list
+list_of_tickers <- lapply(sp500$Tickers, function(symbol) {
+  data <- na.omit(getSymbols(symbol,
+    src = "yahoo",
+    from = Sys.Date() - 1826, # 1826days = 5years
+    to = Sys.Date(),
+    auto.assign = FALSE
+  ))
+  assign(symbol, data, envir = .GlobalEnv)
+  return(data)
+})
+
+# Change the column names that contain "-" to "_" (naming convention)
+list_of_tickers <- lapply(list_of_tickers, function(xts_obj) {
+  colnames(xts_obj) <- gsub("-", "_", colnames(xts_obj))
+  return(xts_obj)
+})
+```
+A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA Equal Weighted ETF) as a reference. We also obtain DGS3MO (Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis) [from FRED](https://fred.stlouisfed.org/series/DGS3MO) to consider the risk-free rate.
+
+![EUSA and DGS3MO](./assets/README/solaris_EUSA_DGS3MO.png "EUSA and DGS3MO")
+
+
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
 
