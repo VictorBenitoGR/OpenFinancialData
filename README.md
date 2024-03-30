@@ -72,7 +72,7 @@ Note that we get a total of **503** tickers, this is because S&P adds all the sh
 > [!IMPORTANT]  
 > Several libraries used in this project are maintained by [Joshua Ulrich](https://github.com/joshuaulrich).
 > 
-> I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) (I hope to start soon too! :)).
+> I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) I hope to start soon too! :)
 
 
 #### Close Price and RSI
