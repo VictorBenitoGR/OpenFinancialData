@@ -63,12 +63,15 @@ Its ultimate goal is to simplify the insertion of any company to corporate inves
 
 ### Portfolio Analysis
 
-#### Companies
+#### Obtain ticker symbols
 First, let's get the data of the S&P 500 companies by scraping its Wikipedia page. Of course this is an initial approach, in the future I will extract it from official sources, and expand the horizon for more companies.
 
 Note that we get a total of **503** tickers, this is because S&P adds all the share classes of the companies, in this case Alphabet Inc. (GOOGL & GOOG), Fox Corporation (FOXA & FOX) and News Corp (NWS & NWSA).
 
 ![SP500 companies](./assets/README/solaris_sp500.png "SP500 companies")
+> [!IMPORTANT]  
+> Several libraries used in this project are maintained by **[Joshua Ulrich](https://github.com/joshuaulrich)**. I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich)
+
 
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
