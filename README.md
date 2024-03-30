@@ -100,6 +100,30 @@ A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA
 
 ![EUSA and DGS3MO](./assets/README/solaris_EUSA_DGS3MO.png "EUSA and DGS3MO")
 
+#### Split by type
+
+In order to reduce the volume of data and improve differentiation, the 6 categories mentioned above should be divided. Within these, the adjusted prices are what we will use the most.
+
+``` R
+# * Function to select columns containing the word "Adjusted"
+adjusted_price <- function(df) {
+  adjusted_columns <- grep("Adjusted", names(df), value = TRUE)
+  return(df[, adjusted_columns, drop = FALSE])
+}
+```
+
+#### XTS to DF
+
+We need to manipulate this data in many ways, so we need to convert them into data frames.
+
+``` R
+# * Function to convert previous xts lists to data frames
+xts_to_df <- function(xts_object) {
+  df <- as.data.frame(xts_object)
+  return(df)
+}
+```
+
 
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
