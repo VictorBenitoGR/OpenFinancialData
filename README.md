@@ -70,7 +70,9 @@ Note that we get a total of **503** tickers, this is because S&P adds all the sh
 
 ![SP500 companies](./assets/README/solaris_sp500.png "SP500 companies")
 > [!IMPORTANT]  
-> Several libraries used in this project are maintained by [Joshua Ulrich](https://github.com/joshuaulrich). I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) (I hope to start soon too!).
+> Several libraries used in this project are maintained by [Joshua Ulrich](https://github.com/joshuaulrich).
+> 
+> I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) (I hope to start soon too! :)).
 
 
 #### Close Price and RSI
