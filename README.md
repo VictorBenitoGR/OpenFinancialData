@@ -93,34 +93,23 @@ We can also obtain **DGS3MO** (Market Yield on U.S. Treasury Securities at 3-Mon
 
 #### Split by type
 
-In order to reduce the volume of data and improve differentiation, the 6 categories mentioned above should be divided. Within these, the adjusted prices are what we will use the most.
-
-``` R
-# * Function to select columns containing the word "Adjusted"
-adjusted_price <- function(df) {
-  adjusted_columns <- grep("Adjusted", names(df), value = TRUE)
-  return(df[, adjusted_columns, drop = FALSE])
-}
-```
+In order to reduce the volume of data and improve differentiation, the 6 categories mentioned above should be divided. Within these, the adjusted price is the one we will use the most.
 
 #### XTS to DF
 
 We need to manipulate this data in many ways, so we need to convert them into data frames.
 
-``` R
-# * Function to convert previous xts lists to data frames
-xts_to_df <- function(xts_object) {
-  df <- as.data.frame(xts_object)
-  return(df)
-}
-```
+Consider that the T-Bills are represented directly as percentages, it's also necessary to transform them to decimals.
 
-![Portfolio Adjusted](./assets/README/solaris_portfolio_adjusted1.png "Portfolio Adjusted")
+#### Remove suffixes
 
-Consider that the T-Bills are represented directly as percentages, it is necessary to transform them to decimals.
+The name of the columns has, in addition to the ticker, a suffix with the name of the data type (for example adjusted or volume). Since they are already divided by these types we eliminate them to improve usability and readability.
 
+#### Remove companies with NA values
 
+Some companies have been less than 5 years in the market, so they have NAs at the beginning. This implies less data to work with for backtesting, so they'll be removed.
 
+![Removed companies](./assets/README/solaris_removed_tickers.png "Removed companies")
 
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).

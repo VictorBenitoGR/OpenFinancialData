@@ -70,6 +70,9 @@ colnames(sp500)[colnames(sp500) == "Symbol"] <- "Tickers"
 # Some tickers have ".", but Yahoo Finance uses "-", this replaces them
 sp500$Tickers <- gsub("\\.", "-", sp500$Tickers)
 
+# Replace "." with "_" in the column names
+colnames(sp500) <- gsub("\\.", "_", colnames(sp500))
+
 View(sp500)
 
 # ? The index actually has 503 components because
@@ -522,13 +525,24 @@ portfolio_adjusted <- portfolio_adjusted[, colSums(
 ) == 0]
 
 # Count the updated number of tickers
-print(ncol(portfolio_adjusted)) # 491, 12 have been removed
+print(ncol(portfolio_adjusted)) # 494, 9 have been removed
 
-# Find the names of the columns that were removed
+# Find the column names that were removed
 removed_colnames <- setdiff(original_colnames, colnames(portfolio_adjusted))
 
-# ABNB, CARR, CEG, CTVA, DOW, FOXA, FOX, GEHC, KVUE, OTIS, UBER, VLTO
-print(removed_colnames)
+# Filter sp500 to only include the removed tickers
+removed_tickers <- sp500[sp500$Tickers %in% removed_colnames, ]
+
+# We only want to see "Tickers", "Security", and "Date_added"
+removed_tickers <- removed_tickers[, c("Tickers", "Security", "Date_added")]
+
+View(removed_tickers)
+
+# ? README image
+table_to_image(
+  removed_tickers,
+  width = 2800, height = 1150
+)
 
 View(portfolio_adjusted)
 
