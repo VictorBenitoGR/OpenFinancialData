@@ -66,36 +66,20 @@ Its ultimate goal is to simplify the insertion of any company to corporate inves
 #### Obtain ticker symbols
 First, let's get the data of the S&P 500 companies by scraping its Wikipedia page. Of course this is an initial approach, in the future I will extract it from official sources, and expand the horizon for more companies.
 
-Note that we get a total of **503** tickers, this is because S&P adds all the share classes of the companies, in this case Alphabet Inc. (GOOGL & GOOG), Fox Corporation (FOXA & FOX) and News Corp (NWS & NWSA).
-
 ![SP500 companies](./assets/README/solaris_sp500.png "SP500 companies")
+
+We actually get a total of **503** tickers, this is because S&P adds all the share classes of the companies.
+
+![SP500 companies](./assets/README/solaris_class_duplicates.png "SP500 companies")
 > [!IMPORTANT]  
-> Several libraries used in this project are maintained by [Joshua Ulrich](https://github.com/joshuaulrich).
+> Some libraries used in this project are maintained by [Joshua Ulrich](https://github.com/joshuaulrich).
 > 
 > I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) I hope to start soon too! :)
 
+Extract opening, closing and adjusted prices, as well as their lows, highs and volume from Yahoo Finance. We can always present the insights of this project with the most updated information, day by day. In this case we are considering a 5-year horizon for backtesting.
 
-Extract opening, closing and adjusted prices, as well as their lows, highs and volume from Yahoo Finance.
+![Yahoo! Finance](./assets/README/solaris_yahoo_finance.png "Yahoo! Finance")
 
-``` R
-# Apply getSymbols to each symbol and store the results in a list
-list_of_tickers <- lapply(sp500$Tickers, function(symbol) {
-  data <- na.omit(getSymbols(symbol,
-    src = "yahoo",
-    from = Sys.Date() - 1826, # 1826days = 5years
-    to = Sys.Date(),
-    auto.assign = FALSE
-  ))
-  assign(symbol, data, envir = .GlobalEnv)
-  return(data)
-})
-
-# Change the column names that contain "-" to "_" (naming convention)
-list_of_tickers <- lapply(list_of_tickers, function(xts_obj) {
-  colnames(xts_obj) <- gsub("-", "_", colnames(xts_obj))
-  return(xts_obj)
-})
-```
 A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA Equal Weighted ETF) as a reference.
 
 ![EUSA](./assets/README/solaris_EUSA.png "EUSA")
