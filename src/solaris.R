@@ -42,7 +42,7 @@ source("./src/install_packages.R")
 #     "ADBE", "NFLX", "WMT", "KO", "BAC"
 #   ),
 #   src = "yahoo",
-#   periodicity = "monthly",
+#   periodicity = "daily",
 #   from = Sys.Date() - 1826, # 1826days = 5years
 #   to = Sys.Date()
 # ))
@@ -62,9 +62,7 @@ source("./src/install_packages.R")
 # ? This repository already has the file in ./data anyway
 system("/usr/bin/python3 ./src/sp500_scrape.py")
 
-# Import a SP500 list of tickers
-# The index actually has 503 components because
-# three of them have two share classes listed.
+# Import a S&P 500 list of tickers
 sp500 <- read.csv("./data/sp500.csv")
 
 colnames(sp500)[colnames(sp500) == "Symbol"] <- "Tickers"
@@ -74,10 +72,17 @@ sp500$Tickers <- gsub("\\.", "-", sp500$Tickers)
 
 View(sp500)
 
+# ? The index actually has 503 components because
+# ? three of them have two share classes listed.
+# Identify companies with multiple share classes
+class_duplicates <- sp500[grep("Class", sp500$Security), ]
+View(class_duplicates) # Alphabet Inc., Fox Corporation and News Corp.
+
 # Apply getSymbols to each symbol and store the results in a list
 list_of_tickers <- lapply(sp500$Tickers, function(symbol) {
   data <- na.omit(getSymbols(symbol,
     src = "yahoo",
+    periodicity = "daily",
     from = Sys.Date() - 1826, # 1826days = 5years
     to = Sys.Date(),
     auto.assign = FALSE
@@ -96,7 +101,7 @@ list_of_tickers <- lapply(list_of_tickers, function(xts_obj) {
 na.omit(getSymbols(
   "EUSA",
   src = "yahoo",
-  periodicity = "monthly",
+  periodicity = "daily",
   from = Sys.Date() - 1826, # 1826days = 5years
   to = Sys.Date()
 ))
@@ -104,17 +109,63 @@ na.omit(getSymbols(
 # Benchmarks, necessary to get Beta and R2
 benchmark <- list(EUSA)
 
+create_table_image <- function(
+    data, width, height, n_rows = NULL, n_cols = NULL) {
+  # Check if the data is an xts object
+  if (inherits(data, "xts")) {
+    # Convert the xts object to a dataframe
+    df <- data.frame(Date = index(data), coredata(data))
+  } else {
+    df <- data
+  }
+
+  # If n_rows or n_cols is not specified, use the actual number it has
+  if (is.null(n_rows)) {
+    n_rows <- nrow(df)
+  }
+  if (is.null(n_cols)) {
+    n_cols <- ncol(df)
+  }
+
+  # Use the head of the dataframe for rows and select columns
+  df <- df[1:n_rows, 1:n_cols]
+
+  # Calculate the maximum number of characters in each column
+  max_chars <- apply(df, 2, function(x) max(str_length(as.character(x))))
+
+  # Convert the dataframe to a matrix and remove row names
+  mat <- as.matrix(df)
+  rownames(mat) <- NULL
+
+  # Create a tableGrob object with adjusted column widths
+  table <- tableGrob(mat, widths = unit(max_chars, "char"))
+
+  # Construct the filename based on the name of the given dataframe
+  filename <- paste0(
+    "./assets/README/solaris_", deparse(substitute(data)), ".png"
+  )
+
+  # Save the table as a PNG image with specified width, height, and resolution
+  png(filename, width = width, height = height, res = 300)
+  grid.newpage()
+  grid.draw(table)
+  dev.off()
+}
+
+# Create a table image for EUSA
+create_table_image(EUSA, width = 2800, height = 1150, n_rows = 10, n_cols = 7)
+
+View(EUSA)
 # * 3-Month/90-Day T-bills
 na.omit(getSymbols(
-  "DGS3MO",
-  src = "FRED",
+  "DGS3MO", # You can have monthly outputs with TB3MS
+  src = "FRED", # Federal Reserve Economic Data
   from = Sys.Date() - 1826, # 1826days = 5years
   to = Sys.Date()
 ))
 
 # T-bills, necessary to get the Sharpe ratio
 tbills <- list(DGS3MO)
-tbills_TB3MS <- list(TB3MS)
 
 
 # *** FUNCTIONS | SPLIT BY TYPES *** ------------------------------------------
@@ -368,30 +419,13 @@ tbills_df <- lapply(tbills, xts_to_df)
 # Combine the data frames into a single data frame
 tbills_df <- do.call(cbind, tbills_df)
 
-# Replace 'Invalid Number' with NA
-tbills_df$DGS3MO <- sub("Invalid Number", NA, tbills_df$DGS3MO)
-
-# Transform tbills_df$DGS3MO to numeric and divide by 100 for percentage
-tbills_df$DGS3MO <- as.numeric(tbills_df$DGS3MO) / 100
+tbills_df$DGS3MO <- tbills_df$DGS3MO / 100
 
 class(tbills_df$DGS3MO) # ! Has to be numeric!
 
-# Use lapply to convert each xts object to a data frame
-tbills_dfTB3MS <- lapply(tbills_TB3MS, xts_to_df)
-
-# Combine the data frames into a single data frame
-tbills_dfTB3MS <- do.call(cbind, tbills_dfTB3MS)
-
-# Replace 'Invalid Number' with NA
-tbills_dfTB3MS$TB3MS <- sub("Invalid Number", NA, tbills_dfTB3MS$TB3MS)
-
-# Transform tbills_df$DGS3MO to numeric and divide by 100 for percentage
-tbills_dfTB3MS$TB3MS <- as.numeric(tbills_dfTB3MS$TB3MS) / 100
-
-class(tbills_dfTB3MS$TB3MS) # ! Has to be numeric!
-
 View(tbills_df)
-View(tbills_dfTB3MS)
+
+
 # *** FUNCTION | remove_suffixes *** ------------------------------------------
 
 # To improve readability and usability, we only want the tickers

@@ -96,9 +96,11 @@ list_of_tickers <- lapply(list_of_tickers, function(xts_obj) {
   return(xts_obj)
 })
 ```
-A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA Equal Weighted ETF) as a reference. We also obtain DGS3MO (Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis) [from FRED](https://fred.stlouisfed.org/series/DGS3MO) to consider the risk-free rate.
+A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA Equal Weighted ETF) as a reference.
 
-![EUSA and DGS3MO](./assets/README/solaris_EUSA_DGS3MO.png "EUSA and DGS3MO")
+![EUSA](./assets/README/solaris_EUSA.png "EUSA")
+
+We can also obtain DGS3MO (Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis) [from FRED](https://fred.stlouisfed.org/series/DGS3MO) to consider the risk-free rate.
 
 #### Split by type
 
@@ -124,11 +126,18 @@ xts_to_df <- function(xts_object) {
 }
 ```
 
+![Portfolio Adjusted](./assets/README/solaris_portfolio_adjusted1.png "Portfolio Adjusted")
+
+Consider that the T-Bills are represented directly as percentages, it is necessary to transform them to decimals.
+
+
+
 
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
 
 ![Closing Price and RSI](./assets/rsi/nvda_close_rsi.jpg "Closing Price and RSI")
+
 
 #### Bollinger Band Signal and RSI Trading Signal
 Identify the points where we would have a buy and sell signal following the Bollinger Band and RSI strategies.
