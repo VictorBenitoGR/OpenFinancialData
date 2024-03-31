@@ -656,7 +656,7 @@ portfolio_metrics <- function(df, benchmark_adjusted, tbills_df) {
 }
 
 
-# *** GET METRICS *** ---------------------------------------------------------
+# *** GENERAL METRICS *** -----------------------------------------------------
 # TODO: Optimize
 
 # Portfolio metrics
@@ -718,6 +718,12 @@ portfolio_adjusted_metrics <-
     portfolio_adjusted_metrics[, -1], 1,
     function(x) all(x > 0)
   ), ]
+
+# ? README images
+table_to_image(
+  portfolio_adjusted_metrics,
+  width = 4400, height = 1150, n_rows = 10
+)
 
 View(portfolio_adjusted_metrics)
 
