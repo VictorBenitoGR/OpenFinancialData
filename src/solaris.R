@@ -78,6 +78,9 @@ View(sp500)
 class_duplicates <- sp500[grep("Class", sp500$Security), ]
 View(class_duplicates) # Alphabet Inc., Fox Corporation and News Corp.
 
+
+# *** OBTAIN THE DAILY PRICES *** ---------------------------------------------
+
 # Apply getSymbols to each symbol and store the results in a list
 list_of_tickers <- lapply(sp500$Tickers, function(symbol) {
   data <- na.omit(getSymbols(symbol,
@@ -123,6 +126,7 @@ tbills <- list(DGS3MO)
 
 # *** FUNCTION | TABLE TO IMAGE *** -------------------------------------------
 
+# * This allows me to automate the creation of tables for the README
 table_to_image <- function(
     data, width, height, n_rows = NULL, n_cols = NULL, res = 300) {
   # Check if the data is an xts object
@@ -166,13 +170,26 @@ table_to_image <- function(
   dev.off()
 }
 
-# Create an image for EUSA
+# * Example usage
+# Create an image for sp500
+table_to_image(
+  sp500,
+  width = 2800, height = 1150, n_rows = 10, n_cols = 3
+)
+
+# Create an image for the duplicated classes
+table_to_image(
+  class_duplicates,
+  width = 2800, height = 800, n_cols = 3
+)
+
+# Create an image for the benchmark
 table_to_image(
   EUSA,
   width = 2800, height = 1150, n_rows = 10
 )
 
-# Create an image for EUSA
+# Create an image for the T-Bills
 table_to_image(
   DGS3MO,
   width = 2800, height = 1150, n_rows = 10

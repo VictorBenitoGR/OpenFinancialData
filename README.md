@@ -64,27 +64,30 @@ Its ultimate goal is to simplify the insertion of any company to corporate inves
 ### Portfolio Analysis
 
 #### Obtain ticker symbols
-First, let's get the data of the S&P 500 companies by scraping its Wikipedia page. Of course this is an initial approach, in the future I will extract it from official sources, and expand the horizon for more companies.
+First, let's get the data of the **S&P 500** companies by scraping its Wikipedia page. Of course this is an initial approach, in the future I will extract it from official sources, **and expand the horizon for more companies**.
 
 ![SP500 companies](./assets/README/solaris_sp500.png "SP500 companies")
 
 We actually get a total of **503** tickers, this is because S&P adds all the share classes of the companies.
 
 ![SP500 companies](./assets/README/solaris_class_duplicates.png "SP500 companies")
+
+#### Obtain the daily prices
+
 > [!IMPORTANT]  
-> Some libraries used in this project are maintained by [Joshua Ulrich](https://github.com/joshuaulrich).
+> The main library used here (and more) is maintained by [Joshua Ulrich](https://github.com/joshuaulrich).
 > 
 > I really encourage you [to sponsor him!](https://github.com/sponsors/joshuaulrich) I hope to start soon too! :)
 
-Extract opening, closing and adjusted prices, as well as their lows, highs and volume from Yahoo Finance. We can always present the insights of this project with the most updated information, day by day. In this case we are considering a 5-year horizon for backtesting.
+Extract **opening**, **closing** and **adjusted** prices, as well as their **lows**, **highs** and **volume** from [Yahoo! Finance](https://finance.yahoo.com/). We can always present the insights of this project with the most updated information, day by day. In this case we are considering a **5-year** horizon for backtesting.
 
 ![Yahoo! Finance](./assets/README/solaris_yahoo_finance.png "Yahoo! Finance")
 
-A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA Equal Weighted ETF) as a reference.
+A proper portfolio analysis needs a **benchmark**, I will use **EUSA** (iShares MSCI USA Equal Weighted ETF) as a reference.
 
 ![EUSA](./assets/README/solaris_EUSA.png "EUSA")
 
-We can also obtain DGS3MO (Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis) [from FRED](https://fred.stlouisfed.org/series/DGS3MO) to consider the risk-free rate.
+We can also obtain **DGS3MO** (Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis) [from FRED](https://fred.stlouisfed.org/series/DGS3MO) to consider the **risk-free rate**.
 
 ![DGS3MO](./assets/README/solaris_DGS3MO.png "DGS3MO")
 
