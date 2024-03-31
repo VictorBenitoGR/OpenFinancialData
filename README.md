@@ -99,7 +99,7 @@ In order to reduce the volume of data and improve differentiation, the 6 categor
 
 We need to manipulate this data in many ways, so we need to convert them into data frames.
 
-Consider that the T-Bills are represented directly as percentages, it's also necessary to transform them to decimals.
+The T-Bills are represented directly as percentages by FRED, so it's necessary to transform them to decimals.
 
 #### Remove suffixes
 
