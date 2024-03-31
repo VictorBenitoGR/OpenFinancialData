@@ -111,11 +111,16 @@ Some companies have been less than 5 years in the market, so they have NAs at th
 
 ![Removed companies](./assets/README/solaris_removed_tickers.png "Removed companies")
 
+#### General metrics
+
+To judge the value of each stock we will consider parameters such as its **average return**, **variance**, **standard deviation**, **beta**, **r-squared**, **sharpe**, **treynor** and **jensen's alpha**.
+
+![General metrics](./assets/README/solaris_portfolio_adjusted_metrics.png "General metrics")
+
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
 
 ![Closing Price and RSI](./assets/rsi/nvda_close_rsi.jpg "Closing Price and RSI")
-
 
 #### Bollinger Band Signal and RSI Trading Signal
 Identify the points where we would have a buy and sell signal following the Bollinger Band and RSI strategies.
@@ -126,8 +131,6 @@ Identify the points where we would have a buy and sell signal following the Boll
 Finally get the result of an hypothetic portfolio started 3 years ago with these strategies, identifying which one would be better (in this case for NVIDIA is Bollinger Trading) or if it'd be better to Buy & Hold.
 
 ![Returns for Bollinger Band and RSI](./assets/rsi/nvda_returns_bollinger_band_rsi.jpg "Bollinger Band RSI")
-
-
 
 ### Valuation Ratios
 > [!IMPORTANT]  
