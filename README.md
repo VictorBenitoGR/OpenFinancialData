@@ -102,6 +102,8 @@ A proper portfolio analysis needs a benchmark, I will use EUSA (iShares MSCI USA
 
 We can also obtain DGS3MO (Market Yield on U.S. Treasury Securities at 3-Month Constant Maturity, Quoted on an Investment Basis) [from FRED](https://fred.stlouisfed.org/series/DGS3MO) to consider the risk-free rate.
 
+![DGS3MO](./assets/README/solaris_DGS3MO.png "DGS3MO")
+
 #### Split by type
 
 In order to reduce the volume of data and improve differentiation, the 6 categories mentioned above should be divided. Within these, the adjusted prices are what we will use the most.

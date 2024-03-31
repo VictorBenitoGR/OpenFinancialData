@@ -28,8 +28,11 @@ packages <- c(
   "patchwork", #      Combine separate ggplots into the same graphic
   "stats", #          The R Stats Package
   "forecast", #       Forecasting functions for time series
-  "tidyr" #           Tidy messy data
-  # ! add "," at the of the previous package to add a new one
+  "tidyr", #          Tidy messy data
+  "grid", #           The Grid Graphics Package
+  "gridExtra", #      Miscellaneous functions for "Grid" graphics
+  "stringr" #         String manipulation
+  # ! add "," at the end of the previous package to add a new one
 )
 
 # Function to install and load packages

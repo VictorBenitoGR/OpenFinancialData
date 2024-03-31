@@ -109,8 +109,22 @@ na.omit(getSymbols(
 # Benchmarks, necessary to get Beta and R2
 benchmark <- list(EUSA)
 
-create_table_image <- function(
-    data, width, height, n_rows = NULL, n_cols = NULL) {
+# * 3-Month/90-Day T-bills
+na.omit(getSymbols(
+  "DGS3MO", # You can have monthly outputs with TB3MS
+  src = "FRED", # Federal Reserve Economic Data
+  from = Sys.Date() - 1826, # 1826days = 5years
+  to = Sys.Date()
+))
+
+# T-bills, necessary to get the Sharpe ratio
+tbills <- list(DGS3MO)
+
+
+# *** FUNCTION | TABLE TO IMAGE *** -------------------------------------------
+
+table_to_image <- function(
+    data, width, height, n_rows = NULL, n_cols = NULL, res = 300) {
   # Check if the data is an xts object
   if (inherits(data, "xts")) {
     # Convert the xts object to a dataframe
@@ -119,7 +133,7 @@ create_table_image <- function(
     df <- data
   }
 
-  # If n_rows or n_cols is not specified, use the actual number it has
+  # If n_rows or n_cols is not specified, use its actual number
   if (is.null(n_rows)) {
     n_rows <- nrow(df)
   }
@@ -146,26 +160,23 @@ create_table_image <- function(
   )
 
   # Save the table as a PNG image with specified width, height, and resolution
-  png(filename, width = width, height = height, res = 300)
+  png(filename, width = width, height = height, res = res)
   grid.newpage()
   grid.draw(table)
   dev.off()
 }
 
-# Create a table image for EUSA
-create_table_image(EUSA, width = 2800, height = 1150, n_rows = 10, n_cols = 7)
+# Create an image for EUSA
+table_to_image(
+  EUSA,
+  width = 2800, height = 1150, n_rows = 10
+)
 
-View(EUSA)
-# * 3-Month/90-Day T-bills
-na.omit(getSymbols(
-  "DGS3MO", # You can have monthly outputs with TB3MS
-  src = "FRED", # Federal Reserve Economic Data
-  from = Sys.Date() - 1826, # 1826days = 5years
-  to = Sys.Date()
-))
-
-# T-bills, necessary to get the Sharpe ratio
-tbills <- list(DGS3MO)
+# Create an image for EUSA
+table_to_image(
+  DGS3MO,
+  width = 2800, height = 1150, n_rows = 10
+)
 
 
 # *** FUNCTIONS | SPLIT BY TYPES *** ------------------------------------------
