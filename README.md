@@ -103,7 +103,7 @@ The T-Bills are represented directly as percentages by FRED, so it's necessary t
 
 #### Remove suffixes
 
-The name of the columns has, in addition to the ticker, a suffix with the name of the data type (for example adjusted or volume). Since they are already divided by these types we eliminate them to improve usability and readability.
+The name of the columns has, in addition to the ticker, a suffix with the name of the data type (for example ".Adjusted" or ".Volume"). Since they are already divided by these types we eliminate them to improve usability and readability.
 
 #### Remove companies with NA values
 
@@ -117,7 +117,23 @@ To judge the value of each stock we will consider parameters such as its **avera
 
 ![General metrics](./assets/README/solaris_portfolio_adjusted_metrics.png "General metrics")
 
+#### Aggressive portfolio
 
+Let's calculate the aggressive portfolio considering a **Sharpe** ratio threshold of **0.03979905**, putting an objective based on **return** (mean), **risk** (standard deviation), **Jensen's Alpha** and **Treynor Ratio**, constraints of min - max individual **weight** of 0.1% to 10%, and optimized by **ROI**.
+
+![Aggressive portfolio](./assets/README/solaris_aggressive_weights_df.png "Aggressive portfolio")
+
+#### Moderate portfolio
+
+Let's calculate the moderate portfolio considering a **Sharpe** ratio threshold of **0.03979905**, putting an objective based on **return** (mean), **risk** (standard deviation), **Jensen's Alpha** and **Treynor Ratio**, constraints of min - max individual **weight** of 0.1% to 10%, and optimized by **ROI**.
+
+![Moderate portfolio](./assets/README/solaris_moderate_weights_df.png "Moderate portfolio")
+
+#### Conservative portfolio
+
+Let's calculate the conservative portfolio considering a **Sharpe** ratio threshold of **0.01979905**, putting an objective based on **return** (mean), **risk** (standard deviation), **Jensen's Alpha** and **Treynor Ratio**, constraints of min - max individual **weight** of 0.1% to 1%, and optimized by **ROI**.
+
+![Conservative portfolio](./assets/README/solaris_conservative_weights_df.png "Conservative portfolio")
 
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
