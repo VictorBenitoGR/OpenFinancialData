@@ -117,6 +117,8 @@ To judge the value of each stock we will consider parameters such as its **avera
 
 ![General metrics](./assets/README/solaris_portfolio_adjusted_metrics.png "General metrics")
 
+
+
 #### Close Price and RSI
 Get the closing price and RSI (NVIDIA case) up to 3 years of data (can be expanded easily).
 

@@ -129,9 +129,7 @@ tbills <- list(DGS3MO)
 
 # *** FUNCTION | TABLE TO IMAGE *** -------------------------------------------
 
-# * This allows me to automate the creation of tables for the README
-table_to_image <- function(
-    data, width, height, n_rows = NULL, n_cols = NULL, res = 300) {
+table_to_image <- function(data, width, height, n_rows = NULL, n_cols = NULL, res = 300) {
   # Check if the data is an xts object
   if (inherits(data, "xts")) {
     # Convert the xts object to a dataframe
@@ -141,30 +139,32 @@ table_to_image <- function(
   }
 
   # If n_rows or n_cols is not specified, use its actual number
-  if (is.null(n_rows)) {
+  if (is.null(n_rows) || n_rows > nrow(df)) {
     n_rows <- nrow(df)
   }
   if (is.null(n_cols)) {
     n_cols <- ncol(df)
   }
 
-  # Use the head of the dataframe for rows and select columns
-  df <- df[1:n_rows, 1:n_cols]
+  # Calculate the number of rows to display from the top and bottom
+  top_rows <- ceiling(n_rows / 2)
+  bottom_rows <- n_rows - top_rows
+
+  # Select the top and bottom rows of the dataframe
+  df <- rbind(df[1:min(top_rows, nrow(df)), 1:n_cols], df[(nrow(df) - min(bottom_rows, nrow(df)) + 1):nrow(df), 1:n_cols])
 
   # Calculate the maximum number of characters in each column
   max_chars <- apply(df, 2, function(x) max(str_length(as.character(x))))
 
-  # Convert the dataframe to a matrix and remove row names
+  # Convert the dataframe to a matrix
   mat <- as.matrix(df)
-  rownames(mat) <- NULL
 
-  # Create a tableGrob object with adjusted column widths
-  table <- tableGrob(mat, widths = unit(max_chars, "char"))
+  # Create a tableGrob object with adjusted column widths and row names
+  table <- tableGrob(mat, rows = rownames(mat), widths = unit(max_chars, "char"),
+                     theme = ttheme_default(rowhead = list(fg_params = list(fontface = "bold"))))
 
   # Construct the filename based on the name of the given dataframe
-  filename <- paste0(
-    "./assets/README/solaris_", deparse(substitute(data)), ".png"
-  )
+  filename <- paste0("./assets/README/solaris_", deparse(substitute(data)), ".png")
 
   # Save the table as a PNG image with specified width, height, and resolution
   png(filename, width = width, height = height, res = res)
@@ -183,13 +183,13 @@ table_to_image(
 # Create an image for the duplicated classes
 table_to_image(
   class_duplicates,
-  width = 2800, height = 800, n_cols = 3
+  width = 2900, height = 800, n_rows = 7, n_cols = 3
 )
 
 # Create an image for the benchmark
 table_to_image(
   EUSA,
-  width = 2800, height = 1150, n_rows = 10
+  width = 2900, height = 1150, n_rows = 10
 )
 
 # Create an image for the T-Bills
@@ -897,6 +897,12 @@ if (length(aggressive_filtered_assets) > 0) {
 sum(aggressive_weights_df) # ! Has to be 1
 View(aggressive_weights_df)
 
+# ? README images
+table_to_image(
+  aggressive_weights_df,
+  width = 2800, height = 1150, n_rows = 10
+)
+
 # Calculate portfolio returns
 aggressive_portfolio_returns <- Return.portfolio(
   R = returns[, aggressive_filtered_assets],
@@ -999,6 +1005,12 @@ if (length(moderate_filtered_assets) > 0) {
 
 sum(moderate_weights_df) # ! Has to be 1
 View(moderate_weights_df)
+
+# ? README images
+table_to_image(
+  moderate_weights_df,
+  width = 2800, height = 1150, n_rows = 10
+)
 
 # Calculate portfolio returns
 moderate_portfolio_returns <- Return.portfolio(
@@ -1106,6 +1118,12 @@ if (length(conservative_filtered_assets) > 0) {
 
 sum(conservative_weights_df) # ! Has to be 1
 View(conservative_weights_df)
+
+# ? README images
+table_to_image(
+  conservative_weights_df,
+  width = 2800, height = 1150, n_rows = 10
+)
 
 # Calculate portfolio returns
 conservative_portfolio_returns <- Return.portfolio(
