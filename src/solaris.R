@@ -153,6 +153,9 @@ table_to_image <- function(data, width, height, n_rows = NULL, n_cols = NULL, re
   # Select the top and bottom rows of the dataframe
   df <- rbind(df[1:min(top_rows, nrow(df)), 1:n_cols], df[(nrow(df) - min(bottom_rows, nrow(df)) + 1):nrow(df), 1:n_cols])
 
+  # Reset the row names
+  rownames(df) <- c(1:top_rows, (nrow(data) - bottom_rows + 1):nrow(data))
+
   # Calculate the maximum number of characters in each column
   max_chars <- apply(df, 2, function(x) max(str_length(as.character(x))))
 
@@ -160,8 +163,10 @@ table_to_image <- function(data, width, height, n_rows = NULL, n_cols = NULL, re
   mat <- as.matrix(df)
 
   # Create a tableGrob object with adjusted column widths and row names
-  table <- tableGrob(mat, rows = rownames(mat), widths = unit(max_chars, "char"),
-                     theme = ttheme_default(rowhead = list(fg_params = list(fontface = "bold"))))
+  table <- tableGrob(mat,
+    rows = rownames(mat), widths = unit(max_chars, "char"),
+    theme = ttheme_default(rowhead = list(fg_params = list(fontface = "bold")))
+  )
 
   # Construct the filename based on the name of the given dataframe
   filename <- paste0("./assets/README/solaris_", deparse(substitute(data)), ".png")
@@ -557,6 +562,7 @@ portfolio_metrics <- function(df, benchmark_adjusted, tbills_df) {
 
   # Divide each row by the previous one and apply natural logarithm
   df <- log(df / lag(df))
+  
   benchmark_adjusted$EUSA <- log(
     benchmark_adjusted$EUSA /
       lag(benchmark_adjusted$EUSA)
@@ -664,45 +670,36 @@ portfolio_open_metrics <- portfolio_metrics(
   portfolio_open, benchmark_adjusted, tbills_df
 )
 
-portfolio_open_metrics <-
-  portfolio_open_metrics[apply(
-    portfolio_open_metrics[, -1], 1,
-    function(x) all(x > 0)
-  ), ]
+portfolio_open_metrics <- portfolio_open_metrics[
+  portfolio_open_metrics$average > 0,
+]
 
 
 portfolio_high_metrics <- portfolio_metrics(
   portfolio_high, benchmark_adjusted, tbills_df
 )
 
-portfolio_high_metrics <-
-  portfolio_high_metrics[apply(
-    portfolio_high_metrics[, -1], 1,
-    function(x) all(x > 0)
-  ), ]
+portfolio_high_metrics <- portfolio_high_metrics[
+  portfolio_high_metrics$average > 0,
+]
 
 
 portfolio_low_metrics <- portfolio_metrics(
   portfolio_low, benchmark_adjusted, tbills_df
 )
 
-portfolio_low_metrics <-
-  portfolio_low_metrics[apply(
-    portfolio_low_metrics[, -1], 1,
-    function(x) all(x > 0)
-  ), ]
+portfolio_low_metrics <- portfolio_low_metrics[
+  portfolio_low_metrics$average > 0,
+]
 
 
 portfolio_close_metrics <- portfolio_metrics(
   portfolio_close, benchmark_adjusted, tbills_df
 )
 
-portfolio_close_metrics <-
-  portfolio_close_metrics[apply(
-    portfolio_close_metrics[, -1], 1,
-    function(x) all(x > 0)
-  ), ]
-
+portfolio_close_metrics <- portfolio_close_metrics[
+  portfolio_close_metrics$average > 0,
+]
 
 # ? Not necessary to calculate metrics for volume, or is it? *Vsauce music*
 # portfolio_volume_metrics <- portfolio_metrics(
@@ -713,11 +710,9 @@ portfolio_adjusted_metrics <- portfolio_metrics(
   portfolio_adjusted, benchmark_adjusted, tbills_df
 )
 
-portfolio_adjusted_metrics <-
-  portfolio_adjusted_metrics[apply(
-    portfolio_adjusted_metrics[, -1], 1,
-    function(x) all(x > 0)
-  ), ]
+portfolio_adjusted_metrics <- portfolio_adjusted_metrics[
+  portfolio_adjusted_metrics$average > 0,
+]
 
 # ? README images
 table_to_image(
@@ -726,6 +721,31 @@ table_to_image(
 )
 
 View(portfolio_adjusted_metrics)
+
+# * Filter portfolios to have tickers with average returns above 0
+portfolio_open <- portfolio_open[
+  , colnames(portfolio_open) %in% portfolio_adjusted_metrics$Tickers
+]
+
+portfolio_high <- portfolio_high[
+  , colnames(portfolio_high) %in% portfolio_adjusted_metrics$Tickers
+]
+
+portfolio_low <- portfolio_low[
+  , colnames(portfolio_low) %in% portfolio_adjusted_metrics$Tickers
+]
+
+portfolio_close <- portfolio_close[
+  , colnames(portfolio_close) %in% portfolio_adjusted_metrics$Tickers
+]
+
+portfolio_volume <- portfolio_volume[
+  , colnames(portfolio_volume) %in% portfolio_adjusted_metrics$Tickers
+]
+
+portfolio_adjusted <- portfolio_adjusted[
+  , colnames(portfolio_adjusted) %in% portfolio_adjusted_metrics$Tickers
+]
 
 
 # *** DF TO XTS *** -----------------------------------------------------------
@@ -829,72 +849,45 @@ threshold <- 0.02979905
 
 ### Aggressive Portfolio:
 
-# Aggressive Portfolio with Additional Metrics
-aggressive_threshold <- 0.03979905
-aggressive_max_weight <- 0.1
+# Use all assets for the aggressive portfolio
+aggressive_filtered_assets <- names(sharpe_ratios)
 
-# Filter assets based on the Sharpe ratio threshold
-aggressive_filtered_assets <- names(
-  sharpe_ratios
-)[sharpe_ratios > aggressive_threshold]
+# Create an aggressive portfolio specification
+aggressive_portfolio <- portfolio.spec(assets = aggressive_filtered_assets)
 
-if (length(aggressive_filtered_assets) > 0) {
-  # Create an aggressive portfolio specification
-  aggressive_portfolio <- portfolio.spec(assets = aggressive_filtered_assets)
+# Add return objective
+aggressive_portfolio <- add.objective(
+  aggressive_portfolio,
+  type = "return", name = "mean", enabled = TRUE
+)
 
-  # Add objectives
-  aggressive_portfolio <- add.objective(
-    aggressive_portfolio,
-    type = "return", name = "mean", enabled = TRUE
-  )
-  aggressive_portfolio <- add.objective(
-    aggressive_portfolio,
-    type = "risk", name = "StdDev", enabled = TRUE
-  )
-  aggressive_portfolio <- add.objective(
-    aggressive_portfolio,
-    type = "JensenAlpha", name = "JensenAlpha", enabled = TRUE
-  )
-  aggressive_portfolio <- add.objective(
-    aggressive_portfolio,
-    type = "TreynorRatio", name = "TreynorRatio", enabled = TRUE
-  )
+# Add box constraint with max weight of 0.1
+aggressive_portfolio <- add.constraint(
+  aggressive_portfolio,
+  type = "box", min = 0, max = 0.1
+)
 
-  # Add constraints
-  aggressive_portfolio <- add.constraint(
-    aggressive_portfolio,
-    type = "diversification", min_diversification = 0.1
-  )
-  aggressive_portfolio <- add.constraint(
-    aggressive_portfolio,
-    type = "long_only"
-  )
-  aggressive_portfolio <- add.constraint(
-    aggressive_portfolio,
-    type = "box", min = 0.001, max = aggressive_max_weight
-  )
+# Optimize the aggressive portfolio
+aggressive_optimum_portfolio <- optimize.portfolio(
+  R = returns[, aggressive_filtered_assets],
+  portfolio = aggressive_portfolio, optimize_method = "ROI"
+)
 
-  # Optimize the aggressive portfolio
-  aggressive_optimum_portfolio <- optimize.portfolio(
-    R = returns[, aggressive_filtered_assets],
-    portfolio = aggressive_portfolio, optimize_method = "ROI"
-  )
+# Convert weights to a dataframe
+aggressive_weights_df <- as.data.frame(aggressive_optimum_portfolio$weights)
+aggressive_weights_df <- data.frame(
+  Tickers = rownames(aggressive_weights_df),
+  Weights = aggressive_weights_df[, 1]
+)
 
-  # Convert weights to a dataframe
-  aggressive_weights_df <- as.data.frame(aggressive_optimum_portfolio$weights)
-  aggressive_weights_df <- data.frame(
-    Tickers = rownames(aggressive_weights_df),
-    Weights = aggressive_weights_df[, 1]
-  )
+# Filter out assets with a weight of zero
+aggressive_weights_df <- aggressive_weights_df[aggressive_weights_df$Weights > 0, ]
 
-  # Print weights
-  print("Aggressive Portfolio Weights:")
-  print(aggressive_weights_df)
-} else {
-  print("No assets passed the aggressive Sharpe ratio threshold.")
-}
+# Print weights
+print("Aggressive Portfolio Weights:")
+print(aggressive_weights_df)
 
-sum(aggressive_weights_df) # ! Has to be 1
+sum(aggressive_weights_df$Weights) # ! Has to be 1
 View(aggressive_weights_df)
 
 # ? README images
@@ -1048,76 +1041,66 @@ print(paste("Maximum Drawdown:", max_drawdown))
 
 # *** CONSERVATIVE PORTFOLIO *** ----------------------------------------------
 
-# Conservative Portfolio with Additional Metrics
-conservative_threshold <- 0.01979905
-conservative_max_weight <- 0.01
+# Load required libraries
+library(PortfolioAnalytics)
 
-# Filter assets based on the Sharpe ratio threshold
-conservative_filtered_assets <-
-  names(sharpe_ratios)[sharpe_ratios > conservative_threshold]
+# Define the portfolio
+conservative_portfolio <- portfolio.spec(assets = colnames(returns))
 
-if (length(conservative_filtered_assets) > 0) {
-  # Create a conservative portfolio specification
-  conservative_portfolio <- portfolio.spec(
-    assets = conservative_filtered_assets
-  )
+# Set the constraints
+conservative_portfolio <- add.constraint(portfolio = conservative_portfolio, type = "box", min = 0.001, max = 0.1)
+conservative_portfolio <- add.constraint(portfolio = conservative_portfolio, type = "full_investment")
 
-  # Add objectives
-  conservative_portfolio <- add.objective(
-    conservative_portfolio,
-    type = "return", name = "mean", enabled = TRUE
-  )
-  conservative_portfolio <- add.objective(
-    conservative_portfolio,
-    type = "risk", name = "StdDev", enabled = TRUE
-  )
-  conservative_portfolio <- add.objective(
-    conservative_portfolio,
-    type = "JensenAlpha", name = "JensenAlpha", enabled = TRUE
-  )
-  conservative_portfolio <- add.objective(
-    conservative_portfolio,
-    type = "TreynorRatio", name = "TreynorRatio", enabled = TRUE
-  )
+# Set the objectives
+conservative_portfolio <- add.objective(portfolio = conservative_portfolio, type = "risk", name = "StdDev")
+conservative_portfolio <- add.objective(portfolio = conservative_portfolio, type = "return", name = "mean")
 
-  # Add constraints
-  conservative_portfolio <- add.constraint(
-    conservative_portfolio,
-    type = "diversification", min_diversification = 0.1
-  )
-  conservative_portfolio <- add.constraint(
-    conservative_portfolio,
-    type = "long_only"
-  )
-  conservative_portfolio <- add.constraint(
-    conservative_portfolio,
-    type = "box", min = 0.001, max = conservative_max_weight
-  )
+# Optimize the portfolio
+conservative_optimum_portfolio <- optimize.portfolio(R = returns, portfolio = conservative_portfolio, optimize_method = "ROI")
 
-  # Optimize the conservative portfolio
-  conservative_optimum_portfolio <- optimize.portfolio(
-    R = returns[, conservative_filtered_assets],
-    portfolio = conservative_portfolio, optimize_method = "ROI"
-  )
+View(conservative_optimum_portfolio)
 
-  # Convert weights to a dataframe
-  conservative_weights_df <- as.data.frame(
-    conservative_optimum_portfolio$weights
-  )
-  conservative_weights_df <- data.frame(
-    Tickers = rownames(conservative_weights_df),
-    Weights = conservative_weights_df[, 1]
-  )
+# Print the portfolio weights
+print("Conservative Portfolio Weights:")
+print(extractWeights(conservative_optimum_portfolio))
 
-  # Print weights
-  print("Conservative Portfolio Weights:")
-  print(conservative_weights_df)
-} else {
-  print("No assets passed the conservative Sharpe ratio threshold.") # ! Fix
-}
+# Extract the portfolio weights
+weights_vector <- extractWeights(conservative_optimum_portfolio)
 
-sum(conservative_weights_df) # ! Has to be 1
-View(conservative_weights_df)
+# Convert the weights to a dataframe
+conservative_weights_df <- as.data.frame(weights_vector)
+
+# Rename the weights_vector column to Weights
+names(conservative_weights_df)[names(conservative_weights_df) == "weights_vector"] <- "Weights"
+
+# Add a column for the asset names
+conservative_weights_df$Tickers <- rownames(conservative_weights_df)
+
+# Remove row names
+rownames(conservative_weights_df) <- NULL
+
+# Rearrange the columns to make Tickers the first column
+conservative_weights_df <- conservative_weights_df[, c("Tickers", "Weights")]
+
+# Print the portfolio weights
+print("Conservative Portfolio Weights:")
+print(conservative_weights_df)
+View(weights_df)
+
+# Calculate portfolio metrics
+conservative_portfolio_returns <- Return.portfolio(R = returns, weights = extractWeights(conservative_optimum_portfolio))
+conservative_portfolio_std_dev <- StdDev(conservative_portfolio_returns)
+conservative_portfolio_sharpe <- SharpeRatio(conservative_portfolio_returns)
+conservative_portfolio_beta <- CAPM.beta(conservative_portfolio_returns, EUSA)
+conservative_portfolio_treynor <- TreynorRatio(conservative_portfolio_returns, EUSA)
+conservative_portfolio_jensen_alpha <- CAPM.jensenAlpha(conservative_portfolio_returns, EUSA)
+
+# Print portfolio metrics
+print(paste("Standard Deviation:", conservative_portfolio_std_dev))
+print(paste("Sharpe Ratio:", conservative_portfolio_sharpe))
+print(paste("Beta:", conservative_portfolio_beta))
+print(paste("Treynor Ratio:", conservative_portfolio_treynor))
+print(paste("Jensen's Alpha:", conservative_portfolio_jensen_alpha))
 
 # ? README images
 table_to_image(
@@ -1161,16 +1144,16 @@ print(paste("Maximum Drawdown:", max_drawdown))
 
 
 # *** PORTFOLIO METRICS WITH WEIGHTS *** --------------------------------------
-
+View(aggressive_weights_df)
 # * Aggressive
 # Extract selected tickers from aggressive_weights_df
 tickers_aggressive <- aggressive_weights_df$Tickers
-
+View(tickers_aggressive)
 # Filter portfolio_adjusted_metrics based on selected tickers
 portfolio_aggressive <- portfolio_adjusted_metrics[
   portfolio_adjusted_metrics$Tickers %in% tickers_aggressive,
 ]
-
+View(portfolio_adjusted_metrics)
 # Merge with aggressive_weights_df to add weights
 portfolio_aggressive <- merge(
   portfolio_aggressive, aggressive_weights_df,

@@ -12,7 +12,7 @@ A,Agilent Technologies,Health Care,Life Sciences Tools & Services,"Santa Clara, 
 APD,Air Products and Chemicals,Materials,Industrial Gases,"Allentown, Pennsylvania",1985-04-30,2969,1940
 ABNB,Airbnb,Consumer Discretionary,"Hotels, Resorts & Cruise Lines","San Francisco, California",2023-09-18,1559720,2008
 AKAM,Akamai,Information Technology,Internet Services & Infrastructure,"Cambridge, Massachusetts",2007-07-12,1086222,1998
-ALB,Albemarle Corporation,Materials,Specialty Bust Chemicals,"Charlotte, North Carolina",2016-07-01,915913,1994
+ALB,Albemarle Corporation,Materials,Specialty Chemicals,"Charlotte, North Carolina",2016-07-01,915913,1994
 ARE,Alexandria Real Estate Equities,Real Estate,Office REITs,"Pasadena, California",2017-03-20,1035443,1994
 ALGN,Align Technology,Health Care,Health Care Supplies,"Tempe, Arizona",2017-06-19,1097149,1997
 ALLE,Allegion,Industrials,Building Products,"Dublin, Ireland",2013-12-02,1579241,1908
@@ -142,10 +142,9 @@ DHR,Danaher Corporation,Health Care,Life Sciences Tools & Services,"Washington, 
 DRI,Darden Restaurants,Consumer Discretionary,Restaurants,"Orlando, Florida",1995-05-31,940944,1938
 DVA,DaVita Inc.,Health Care,Health Care Services,"Denver, Colorado",2008-07-31,927066,1979
 DAY,Dayforce,Industrials,Human Resource & Employment Services,"Minneapolis, Minnesota",2021-09-20,1725057,1992
-DECK,Deckers Brands,Consumer Discretionary,Footwear,"Goleta, California",2024-03-01,910521,1973
+DECK,Deckers Brands,Consumer Discretionary,Footwear,"Goleta, California",2024-03-18,910521,1973
 DE,John Deere,Industrials,Agricultural & Farm Machinery,"Moline, Illinois",1957-03-04,315189,1837
 DAL,Delta Air Lines,Industrials,Passenger Airlines,"Atlanta, Georgia",2013-09-11,27904,1929
-XRAY,Dentsply Sirona,Health Care,Health Care Supplies,"Charlotte, North Carolina",2008-11-14,818479,2016 (1969)
 DVN,Devon Energy,Energy,Oil & Gas Exploration & Production,"Oklahoma City, Oklahoma",2000-08-30,1090012,1971
 DXCM,Dexcom,Health Care,Health Care Equipment,"San Diego, California",2020-05-12,1093557,1999
 FANG,Diamondback Energy,Energy,Oil & Gas Exploration & Production,"Midland, Texas",2018-12-03,1539838,2007
@@ -211,11 +210,12 @@ BEN,Franklin Templeton,Financials,Asset Management & Custody Banks,"San Mateo, C
 FCX,Freeport-McMoRan,Materials,Copper,"Phoenix, Arizona",2011-07-01,831259,1912
 GRMN,Garmin,Consumer Discretionary,Consumer Electronics,"Schaffhausen, Switzerland",2012-12-12,1121788,1989
 IT,Gartner,Information Technology,IT Consulting & Other Services,"Stamford, Connecticut",2017-04-05,749251,1979
+GE,GE Aerospace,Industrials,Aerospace & Defense,"Evendale, Ohio",1957-03-04,40545,1892
 GEHC,GE HealthCare,Health Care,Health Care Equipment,"Chicago, Illinois",2023-01-04,1932393,1994
+GEV,GE Vernova,Industrials,Heavy Electrical Equipment,"Cambridge, Massachusetts",2024-04-02,1996810,2024
 GEN,Gen Digital,Information Technology,Systems Software,"Tempe, Arizona",2003-03-25,849399,1982
 GNRC,Generac,Industrials,Electrical Components & Equipment,"Waukesha, Wisconsin",2021-03-22,1474735,1959
 GD,General Dynamics,Industrials,Aerospace & Defense,"Falls Church, Virginia",1957-03-04,40533,1899
-GE,General Electric,Industrials,Industrial Conglomerates,"Boston, Massachusetts",1957-03-04,40545,1892
 GIS,General Mills,Consumer Staples,Packaged Foods & Meats,"Golden Valley, Minnesota",1957-03-04,40704,1856
 GM,General Motors,Consumer Discretionary,Automobile Manufacturers,"Detroit, Michigan",2013-06-06,1467858,1908
 GPC,Genuine Parts Company,Consumer Discretionary,Distributors,"Atlanta, Georgia",1973-12-31,40987,1925
@@ -374,7 +374,6 @@ PCG,PG&E Corporation,Utilities,Multi-Utilities,"San Francisco, California",2022-
 PM,Philip Morris International,Consumer Staples,Tobacco,"New York City, New York",2008-03-31,1413329,2008 (1847)
 PSX,Phillips 66,Energy,Oil & Gas Refining & Marketing,"Houston, Texas",2012-05-01,1534701,2012 (1917)
 PNW,Pinnacle West,Utilities,Multi-Utilities,"Phoenix, Arizona",1999-10-04,764622,1985
-PXD,Pioneer Natural Resources,Energy,Oil & Gas Exploration & Production,"Irving, Texas",2008-09-24,1038357,1997
 PNC,PNC Financial Services,Financials,Regional Banks,"Pittsburgh, Pennsylvania",1988-04-30,713676,1845
 POOL,Pool Corporation,Consumer Discretionary,Distributors,"Covington, Louisiana",2020-10-07,945841,1993
 PPG,PPG Industries,Materials,Specialty Chemicals,"Pittsburgh, Pennsylvania",1957-03-04,79879,1883
@@ -420,6 +419,7 @@ SPG,Simon Property Group,Real Estate,Retail REITs,"Indianapolis, Indiana",2002-0
 SWKS,Skyworks Solutions,Information Technology,Semiconductors,"Irvine, California",2015-03-12,4127,2002
 SJM,J.M. Smucker Company (The),Consumer Staples,Packaged Foods & Meats,"Orrville, Ohio",2008-11-06,91419,1897
 SNA,Snap-on,Industrials,Industrial Machinery & Supplies & Components,"Kenosha, Wisconsin",1982-09-30,91440,1920
+SOLV,Solventum,Health Care,Health Care Technology,"Saint Paul, Minnesota",2024-04-01,1964738,2023
 SO,Southern Company,Utilities,Electric Utilities,"Atlanta, Georgia",1957-03-04,92122,1945
 LUV,Southwest Airlines,Industrials,Passenger Airlines,"Dallas, Texas",1994-07-01,92380,1967
 SWK,Stanley Black & Decker,Industrials,Industrial Machinery & Supplies & Components,"New Britain, Connecticut",1982-09-30,93556,1843
@@ -472,7 +472,6 @@ VRSN,Verisign,Information Technology,Internet Services & Infrastructure,"Dulles,
 VRSK,Verisk,Industrials,Research & Consulting Services,"Jersey City, New Jersey",2015-10-08,1442145,1971
 VZ,Verizon,Communication Services,Integrated Telecommunication Services,"New York City, New York",1983-11-30,732712,1983 (1877)
 VRTX,Vertex Pharmaceuticals,Health Care,Biotechnology,"Cambridge, Massachusetts",2013-09-23,875320,1989
-VFC,VF Corporation,Consumer Discretionary,"Apparel, Accessories & Luxury Goods","Denver, Colorado",1979-06-30,103379,1899
 VTRS,Viatris,Health Care,Pharmaceuticals,"Pittsburgh, Pennsylvania",2004-04-23,1792044,1961
 VICI,Vici Properties,Real Estate,Hotel & Resort REITs,"New York City, New York",2022-06-08,1705696,2017
 V,Visa Inc.,Financials,Transaction & Payment Processing Services,"San Francisco, California",2009-12-21,1403161,1958
