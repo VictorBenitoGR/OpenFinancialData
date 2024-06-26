@@ -18,7 +18,7 @@ edad_retiro <- 65
 esperanza_vida <- 85
 
 # * Variables de la Afore
-rendimiento_anual <- 0.06 # 6.00% de rendimiento anual promedio
+rendimiento_anual <- 0.0564 # 5.64% SIEFORE Básica inicial promedio ponderado
 inflacion_anual <- 0.0469 # 4.69% Tasa de inflación anual promedio (INEGI, 2024)
 comision_anual <- 0.0057 # 0.57% Comisión anual máxima (SCJN, 2024)
 
@@ -143,6 +143,10 @@ paso <- rango_total / 3
 punto_medio1 <- edad_actual + paso
 punto_medio2 <- edad_actual + (2 * paso)
 
+# Calcular puntos intermedios del eje Y
+max_valor <- max(saldo_final$saldo_acumulado_ajustado_inf)
+paso_y <- max_valor / 3
+
 # Visualización
 afore_ajustado_inflacion <- ggplot(saldo_final, aes(x = anios)) +
   geom_area_pattern(aes(y = saldo_acumulado_ajustado_inf, fill = "Con Afore"),
@@ -164,7 +168,7 @@ afore_ajustado_inflacion <- ggplot(saldo_final, aes(x = anios)) +
       "Tus ahorros ",
       "<span style='color:#329f00;'>con AFORE</span> o ",
       "<span style='color:#0047ab;'>sin él</span>",
-      " 👑"
+      " 💸"
     ),
     caption = "GitHub: OpenFinancialData | @VictorBenitoGR", x = "Edad", y = ""
   ) +
@@ -174,6 +178,11 @@ afore_ajustado_inflacion <- ggplot(saldo_final, aes(x = anios)) +
       edad_actual, round(punto_medio1), round(punto_medio2), esperanza_vida
     )
   ) +
+  scale_y_continuous(
+    limits = c(0, max_valor),
+    breaks = c(0, paso_y, 2 * paso_y, max_valor),
+    labels = etiqueta_millones
+  ) +
   theme_ipsum() +
   theme(
     text = element_text(color = "black", face = "bold"),
@@ -182,7 +191,6 @@ afore_ajustado_inflacion <- ggplot(saldo_final, aes(x = anios)) +
     legend.position = "none",
     plot.title = element_markdown()
   ) +
-  scale_y_continuous(labels = etiqueta_millones) +
   annotate(
     geom = "richtext",
     x = edad_actual + 1, y = tail(datos$saldo_acumulado_ajustado_inf, 1) * .95,
