@@ -1,7 +1,7 @@
 # * OpenFinancialData | VEGA | GPL-3.0 license
 # * https://github.com/VictorBenitoGR/OpenFInancialData
 
-# *** PACKAGES *** ------------------------------------------------------------
+# *** Packages ----------------------------------------------------------------
 
 # ? Packages used in this script:
 # quantmod      Quantitative financial modeling and trading framework
@@ -16,44 +16,17 @@
 # * Install and load packages
 source("./src/install_packages.R")
 
-# *** STOCK TO DF *** ---------------------------------------------------------
-library(quantmod)
+# *** Financial Statements ----------------------------------------------------
 
-stock_to_df <- function(symbols) {
-  dfs <- list()
+library(readxl)
 
-  for (symbol in symbols) {
-    # Get the stock data
-    stock <- getSymbols(
-      symbol,
-      src = "yahoo",
-      from = Sys.Date() - 1095, # 1095 days = 3 years
-      to = Sys.Date(),
-      auto.assign = FALSE
-    )
+# Comparativos de Reportes Financieros Nominales
 
-    # Extract the closing and opening prices from the stock data
-    df <- data.frame(
-      timestamp = index(stock),
-      opening = Op(stock),
-      high = Hi(stock),
-      low = Lo(stock),
-      closing = Cl(stock),
-      volume = Vo(stock),
-      adjusted = Ad(stock)
-    )
+# Razón Social: GRUPO HERDEZ, S.A.B. DE C.V.
+# Ticker: HERDEZ
+# Año Inicial: 2016
+# Año Final: 2021
 
-    dfs[[symbol]] <- df
-  }
-
-  return(dfs)
-}
-
-symbols <- c("AAPL", "GOOGL", "MSFT")
-
-dfs <- stock_to_df(symbols)
-
-# Split the dfs
-dfs_AAPL <- dfs[["AAPL"]]
-dfs_GOOGL <- dfs[["GOOGL"]]
-dfs_MSFT <- dfs[["MSFT"]]
+herdez <- read_excel("./data/herdez_financial_statements.xlsx", sheet = "financial_statement")
+View(herdez)
+# D
